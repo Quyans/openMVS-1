@@ -36,6 +36,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/connected_components.hpp>
+#include<Eigen>
 
 using namespace MVS;
 
@@ -193,7 +194,7 @@ struct MeshTexture {
 	struct TexturePatch {
 		Label label; // view index
 		Mesh::FaceIdxArr faces; // indices of the faces contained by the patch
-		RectsBinPack::Rect rect; // the bounding box in the view containing the patch
+		RectsBinPack::Rect rect; // the bounding box in the view containing the patch  包含面片的视图中的边界框
 	};
 	typedef cList<TexturePatch,const TexturePatch&,1,1024,FIndex> TexturePatchArr;
 
@@ -419,7 +420,7 @@ protected:
 
 
 public:
-	const unsigned nResolutionLevel; // how many times to scale down the images before mesh optimization
+	const unsigned nResolutionLevel; // how many times to scale down the images before mesh optimization   在网格优化前要缩小多少次图像
 	const unsigned nMinResolution; // how many times to scale down the images before mesh optimization
 
 	// store found texture patches
@@ -427,7 +428,7 @@ public:
 
 	// used to compute the seam leveling
 	PairIdxArr seamEdges; // the (face-face) edges connecting different texture patches
-	Mesh::FaceIdxArr components; // for each face, stores the texture patch index to which belongs
+	Mesh::FaceIdxArr components; // for each face, stores the texture patch index to which belongs  
 	IndexArr mapIdxPatch; // remap texture patch indices after invalid patches removal
 	SeamVertices seamVertices; // array of vertices on the border between two or more patches
 
@@ -445,6 +446,8 @@ public:
 	Scene& scene; // the mesh vertices and faces
 };
 
+//这个写法是赋值 https://blog.csdn.net/zhanghenan123/article/details/86468317
+// 括号里的赋值给括号外的
 MeshTexture::MeshTexture(Scene& _scene, unsigned _nResolutionLevel, unsigned _nMinResolution)
 	:
 	nResolutionLevel(_nResolutionLevel),
@@ -465,7 +468,7 @@ MeshTexture::~MeshTexture()
 	vertexBoundary.Release();
 }
 
-// extract array of triangles incident to each vertex
+// extract array of triangles incident to each vertex 提取与每个定点相关的三角形数组
 // and check each vertex if it is at the boundary or not
 void MeshTexture::ListVertexFaces()
 {
@@ -479,23 +482,31 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 {
 	// create vertices octree
 	facesDatas.Resize(faces.GetSize());
-	typedef std::unordered_set<FIndex> CameraFaces;
+	typedef std::unordered_set<FIndex> CameraFaces;   //相当于起了个别名
 	struct FacesInserter {
 		FacesInserter(const Mesh::VertexFacesArr& _vertexFaces, CameraFaces& _cameraFaces)
 			: vertexFaces(_vertexFaces), cameraFaces(_cameraFaces) {}
+
 		inline void operator() (IDX idxVertex) {
 			const Mesh::FaceIdxArr& vertexTris = vertexFaces[idxVertex];
+			// cList iterator by pointer  遍历器
 			FOREACHPTR(pTri, vertexTris)
+			//将指针进行储存
 				cameraFaces.emplace(*pTri);
 		}
+
 		inline void operator() (const IDX* idices, size_t size) {
 			FOREACHRAWPTR(pIdxVertex, idices, size)
 				operator()(*pIdxVertex);
 		}
+
 		const Mesh::VertexFacesArr& vertexFaces;
 		CameraFaces& cameraFaces;
 	};
+
+
 	typedef TOctree<Mesh::VertexArr,float,3> Octree;
+	//vertices 顶点
 	const Octree octree(vertices);
 	#if 0 && !defined(_RELEASE)
 	Octree::DEBUGINFO_TYPE info;
@@ -525,10 +536,12 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 	#endif
 		Image& imageData = images[idxView];
 		if (!imageData.IsValid()) {
+			//下一个程序
 			++progress;
 			continue;
 		}
 		// load image
+		//传入一个数字 无符号数字
 		unsigned level(nResolutionLevel);
 		const unsigned imageSize(imageData.RecomputeMaxResolution(level, nMinResolution));
 		if ((imageData.image.empty() || MAXF(imageData.width,imageData.height) != imageSize) && !imageData.ReloadImage(imageSize)) {
@@ -540,8 +553,11 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 			return false;
 			#endif
 		}
+
 		imageData.UpdateCamera(scene.platforms);
+
 		// compute gradient magnitude
+		// 存储到imageGradMag   这个暂时略过先不看  这个方法是将图片转为灰度图片
 		imageData.image.toGray(imageGradMag, cv::COLOR_BGR2GRAY, true);
 		cv::Mat grad[2];
 		mGrad[0].resize(imageGradMag.rows, imageGradMag.cols);
@@ -549,6 +565,7 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 		mGrad[1].resize(imageGradMag.rows, imageGradMag.cols);
 		grad[1] = cv::Mat(imageGradMag.rows, imageGradMag.cols, cv::DataType<real>::type, (void*)mGrad[1].data());
 		#if 1
+		//用sobel算子计算图片的x和y的导数  grad中存的和imageGradMag中存的是大小相同通道数相同的图像
 		cv::Sobel(imageGradMag, grad[0], cv::DataType<real>::type, 1, 0, 3, 1.0/8.0);
 		cv::Sobel(imageGradMag, grad[1], cv::DataType<real>::type, 0, 1, 3, 1.0/8.0);
 		#elif 1
@@ -560,8 +577,9 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 		cv::filter2D(imageGradMag, grad[0], cv::DataType<real>::type, kernel);
 		cv::filter2D(imageGradMag, grad[1], cv::DataType<real>::type, kernel.t());
 		#endif
+		
 		(TImage<real>::EMatMap)imageGradMag = (mGrad[0].cwiseAbs2()+mGrad[1].cwiseAbs2()).cwiseSqrt();
-		// select faces inside view frustum
+		// select faces inside view frustum  椎体
 		CameraFaces cameraFaces;
 		FacesInserter inserter(vertexFaces, cameraFaces);
 		typedef TFrustum<float,5> Frustum;
@@ -570,12 +588,14 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 		// project all triangles in this view and keep the closest ones
 		faceMap.create(imageData.height, imageData.width);
 		depthMap.create(imageData.height, imageData.width);
+		//Raster 光栅图像
 		RasterMesh rasterer(vertices, imageData.camera, depthMap, faceMap);
 		rasterer.Clear();
 		for (auto idxFace : cameraFaces) {
 			const Face& facet = faces[idxFace];
 			rasterer.idxFace = idxFace;
 			rasterer.Project(facet);
+			// project face vertices to image plane
 		}
 		// compute the projection area of visible faces
 		#if TEXOPT_FACEOUTLIER != TEXOPT_FACEOUTLIER_NA
@@ -640,6 +660,7 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 	if (fOutlierThreshold > 0) {
 		// try to detect outlier views for each face
 		// (views for which the face is occluded by a dynamic object in the scene, ex. pedestrians)
+		//检查离群值 比如障碍物啥的
 		FOREACHPTR(pFaceDatas, facesDatas)
 			FaceOutlierDetection(*pFaceDatas, fOutlierThreshold);
 	}
@@ -826,7 +847,8 @@ bool MeshTexture::FaceOutlierDetection(FaceDataArr& faceDatas, float thOutlier) 
 #endif
 
 bool MeshTexture::FaceViewSelection(float fOutlierThreshold, float fRatioDataSmoothness)
-{
+{	//Threshold 阈值  Outlier 离群值异常值 
+
 	// extract array of triangles incident to each vertex
 	ListVertexFaces();
 
@@ -1122,16 +1144,17 @@ bool MeshTexture::FaceViewSelection(float fOutlierThreshold, float fRatioDataSmo
 // create seam vertices and edges
 void MeshTexture::CreateSeamVertices()
 {
-	// each vertex will contain the list of patches it separates,
-	// except the patch containing invisible faces;
-	// each patch contains the list of edges belonging to that texture patch, starting from that vertex
-	// (usually there are pairs of edges in each patch, representing the two edges starting from that vertex separating two valid patches)
+	// each vertex will contain the list of patches it separates, 每个顶点将包含它所分离的面片列表，
+	// except the patch containing invisible faces; 除了包含不可见面的面片；
+	// each patch contains the list of edges belonging to that texture patch, starting from that vertex  每个面片包含从该顶点开始属于该纹理面片的边的列表
+	// (usually there are pairs of edges in each patch, representing the two edges starting from that vertex separating two valid patches) 通常每个面片中都有一对边，表示从该顶点开始的两条边，分隔两个有效面片
 	VIndex vs[2];
 	uint32_t vs0[2], vs1[2];
 	std::unordered_map<VIndex, uint32_t> mapVertexSeam;
 	const unsigned numPatches(texturePatches.GetSize()-1);
 	FOREACHPTR(pEdge, seamEdges) {
-		// store edge for the later seam optimization
+		// store edge for the later seam optimization       seam 接缝
+		//i j 分别是 无符号整数 
 		ASSERT(pEdge->i < pEdge->j);
 		const uint32_t idxPatch0(mapIdxPatch[components[pEdge->i]]);
 		const uint32_t idxPatch1(mapIdxPatch[components[pEdge->j]]);
@@ -1799,12 +1822,19 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		TexturePatch& texturePatch = *pTexturePatch;
 	#endif
 		const Image& imageData = images[texturePatch.label];
-		// project vertices and compute bounding-box
+		// project vertices and compute bounding-box  包围盒
+		//基本轴对齐边框类
 		AABB2f aabb(true);
+		//这个函数就是个遍历器 返回指向容器最开始位置数据的指针 后面的是数组
 		FOREACHPTR(pIdxFace, texturePatch.faces) {
+			//*pIdxFace  是取出pldxFace这个指针指的那个值 
 			const FIndex idxFace(*pIdxFace);
+			//根据索引取出face
 			const Face& face = faces[idxFace];
+			//faceTexcoords 是纹理坐标的数组
+
 			TexCoord* texcoords = faceTexcoords.Begin()+idxFace*3;
+			//问题：为什么需要*3
 			for (int i=0; i<3; ++i) {
 				texcoords[i] = imageData.camera.ProjectPointP(vertices[face[i]]);
 				ASSERT(imageData.image.isInsideWithBorder(texcoords[i], border));
@@ -1814,13 +1844,19 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		// compute relative texture coordinates
 		ASSERT(imageData.image.isInside(Point2f(aabb.ptMin)));
 		ASSERT(imageData.image.isInside(Point2f(aabb.ptMax)));
+		//下取整
 		texturePatch.rect.x = FLOOR2INT(aabb.ptMin[0])-border;
 		texturePatch.rect.y = FLOOR2INT(aabb.ptMin[1])-border;
+		//aabb.ptMax[0]存的好像是 右上角角的点的x坐标 aabb.ptMax[1]存的 是右上角的y坐标
+		//aabb.ptMin[0]存的是左下角的x坐标 aabb.ptMin[1]) 存的是左下角的y坐标
 		texturePatch.rect.width = CEIL2INT(aabb.ptMax[0]-aabb.ptMin[0])+border*2;
 		texturePatch.rect.height = CEIL2INT(aabb.ptMax[1]-aabb.ptMin[1])+border*2;
 		ASSERT(imageData.image.isInside(texturePatch.rect.tl()));
 		ASSERT(imageData.image.isInside(texturePatch.rect.br()));
+		// tl()是top left 的点的坐标  br()右下角坐标
 		const TexCoord offset(texturePatch.rect.tl());
+
+
 		FOREACHPTR(pIdxFace, texturePatch.faces) {
 			const FIndex idxFace(*pIdxFace);
 			TexCoord* texcoords = faceTexcoords.Begin()+idxFace*3;
@@ -1828,6 +1864,8 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				texcoords[v] -= offset;
 		}
 	}
+
+
 	{
 		// init last patch to point to a small uniform color patch
 		TexturePatch& texturePatch = texturePatches.Last();
@@ -1846,7 +1884,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		// create seam vertices and edges
 		CreateSeamVertices();
 
-		// perform global seam leveling
+		// perform global seam leveling 执行全局接缝调平
 		if (bGlobalSeamLeveling) {
 			TD_TIMER_STARTD();
 			GlobalSeamLeveling();
@@ -1861,7 +1899,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		}
 	}
 
-	// merge texture patches with overlapping rectangles
+	// merge texture patches with overlapping rectangles 使用重叠矩形合并纹理面片
 	for (unsigned i=0; i<texturePatches.GetSize()-2; ++i) {
 		TexturePatch& texturePatchBig = texturePatches[i];
 		for (unsigned j=1; j<texturePatches.GetSize()-1; ++j) {
@@ -1898,9 +1936,12 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		while (true) {
 			TD_TIMER_STARTD();
 			bool bPacked(false);
+			//nRectPackingHeuristic是2的倍数
 			const unsigned typeRectsBinPack(nRectPackingHeuristic/100);
 			const unsigned typeSplit((nRectPackingHeuristic-typeRectsBinPack*100)/10);
 			const unsigned typeHeuristic(nRectPackingHeuristic%10);
+
+
 			switch (typeRectsBinPack) {
 			case 0: {
 				MaxRectsBinPack pack(textureSize, textureSize);
@@ -1926,6 +1967,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		// create texture image
 		const float invNorm(1.f/(float)(textureSize-1));
 		textureDiffuse.create(textureSize, textureSize);
+		//Scalar 标量
 		textureDiffuse.setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
 		#ifdef TEXOPT_USE_OPENMP
 		#pragma omp parallel for schedule(dynamic)
@@ -1944,7 +1986,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				const Image& imageData = images[texturePatch.label];
 				cv::Mat patch(imageData.image(texturePatch.rect));
 				if (rect.width != texturePatch.rect.width) {
-					// flip patch and texture-coordinates
+					// flip patch and texture-coordinates  翻转面片和纹理坐标
 					patch = patch.t();
 					x = 1; y = 0;
 				}
@@ -1971,6 +2013,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 // texture mesh
 bool Scene::TextureMesh(unsigned nResolutionLevel, unsigned nMinResolution, float fOutlierThreshold, float fRatioDataSmoothness, bool bGlobalSeamLeveling, bool bLocalSeamLeveling, unsigned nTextureSizeMultiple, unsigned nRectPackingHeuristic, Pixel8U colEmpty)
 {
+	//只是构造方法而已
 	MeshTexture texture(*this, nResolutionLevel, nMinResolution);
 
 	// assign the best view to each face
