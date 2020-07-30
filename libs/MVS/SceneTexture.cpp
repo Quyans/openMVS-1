@@ -1936,7 +1936,8 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		while (true) {
 			TD_TIMER_STARTD();
 			bool bPacked(false);
-			//nRectPackingHeuristic是2的倍数
+			//nRectPackingHeuristic  是 0 3 100三种
+			//0 - best fit, 3 - good speed, 100 - best speed
 			const unsigned typeRectsBinPack(nRectPackingHeuristic/100);
 			const unsigned typeSplit((nRectPackingHeuristic-typeRectsBinPack*100)/10);
 			const unsigned typeHeuristic(nRectPackingHeuristic%10);
@@ -1944,23 +1945,28 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 
 			switch (typeRectsBinPack) {
 			case 0: {
+				//best fit
 				MaxRectsBinPack pack(textureSize, textureSize);
 				bPacked = pack.Insert(rects, (MaxRectsBinPack::FreeRectChoiceHeuristic)typeHeuristic);
 				break; }
 			case 1: {
+				//best speed
 				SkylineBinPack pack(textureSize, textureSize, typeSplit!=0);
 				bPacked = pack.Insert(rects, (SkylineBinPack::LevelChoiceHeuristic)typeHeuristic);
 				break; }
 			case 2: {
+			
 				GuillotineBinPack pack(textureSize, textureSize);
 				bPacked = pack.Insert(rects, false, (GuillotineBinPack::FreeRectChoiceHeuristic)typeHeuristic, (GuillotineBinPack::GuillotineSplitHeuristic)typeSplit);
 				break; }
 			default:
 				ABORT("error: unknown RectsBinPack type");
 			}
+
 			DEBUG_ULTIMATE("\tpacking texture completed: %u patches, %u texture-size (%s)", rects.GetSize(), textureSize, TD_TIMER_GET_FMT().c_str());
 			if (bPacked)
 				break;
+			//如果大小不够就*2
 			textureSize *= 2;
 		}
 
@@ -2030,7 +2036,6 @@ bool Scene::TextureMesh(unsigned nResolutionLevel, unsigned nMinResolution, floa
 		texture.GenerateTexture(bGlobalSeamLeveling, bLocalSeamLeveling, nTextureSizeMultiple, nRectPackingHeuristic, colEmpty);
 		DEBUG_EXTRA("Generating texture atlas and image completed: %u patches, %u image size (%s)", texture.texturePatches.GetSize(), mesh.textureDiffuse.width(), TD_TIMER_GET_FMT().c_str());
 	}
-
 	return true;
 } // TextureMesh
 /*----------------------------------------------------------------*/

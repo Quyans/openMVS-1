@@ -32,7 +32,7 @@
 /**
 Initial version created by:
 
-@author Jukka Jyl�nki
+@author Jukka Jyl�nki
 
 @brief Implements different bin packer algorithms that use the MAXRECTS, SKYLINE and GUILLOTINE data structures.
 
@@ -60,7 +60,7 @@ public:
 	typedef cv::Rect Rect;
 	typedef CLISTDEF0(Rect) RectArr;
 
-	/// Instantiates a bin of size (0,0). Call Init to create a new bin.
+	/// Instantiates a bin of size (0,0). Call Init to create a new bin.   bin箱子
 	MaxRectsBinPack();
 
 	/// Instantiates a bin of the given size.
@@ -70,13 +70,13 @@ public:
 	/// you need to restart with a new bin.
 	void Init(int width, int height);
 
-	/// Specifies the different heuristic rules that can be used when deciding where to place a new rectangle.
+	/// Specifies the different heuristic rules that can be used when deciding where to place a new rectangle.     heuristic启发式
 	enum FreeRectChoiceHeuristic {
-		RectBestShortSideFit, ///< -BSSF: Positions the rectangle against the short side of a free rectangle into which it fits the best.
+		RectBestShortSideFit, ///< -BSSF: Positions the rectangle against the short side of a free rectangle into which it fits the best.　　将矩形放置在最适合其的自由矩形的短边上。
 		RectBestLongSideFit, ///< -BLSF: Positions the rectangle against the long side of a free rectangle into which it fits the best.
-		RectBestAreaFit, ///< -BAF: Positions the rectangle into the smallest free rect into which it fits.
-		RectBottomLeftRule, ///< -BL: Does the Tetris placement.
-		RectContactPointRule, ///< -CP: Chooses the placement where the rectangle touches other rects as much as possible.
+		RectBestAreaFit, ///< -BAF: Positions the rectangle into the smallest free rect into which it fits.　　　最小区域
+		RectBottomLeftRule, ///< -BL: Does the Tetris placement.　　　俄罗斯方块的位置。
+		RectContactPointRule, ///< -CP: Chooses the placement where the rectangle touches other rects as much as possible.　　触碰更多的方框
 		RectLast
 	};
 
@@ -110,9 +110,9 @@ protected:
 	RectArr freeRectangles;
 
 	/// Computes the placement score for placing the given rectangle with the given method.
-	/// @param score1 [out] The primary placement score will be outputted here.
-	/// @param score2 [out] The secondary placement score will be outputted here. This is used to break ties.
-	/// @return This struct identifies where the rectangle would be placed if it were placed.
+	/// @param score1 [out] The primary placement score will be outputted here.   偏差较小的
+	/// @param score2 [out] The secondary placement score will be outputted here. This is used to break ties.  偏差较大的边
+	/// @return This struct identifies where the rectangle would be placed if it were placed. 此结构标识放置矩形时将放置的位置。
 	Rect ScoreRect(int width, int height, FreeRectChoiceHeuristic method, int &score1, int &score2) const;
 
 	/// Places the given rectangle into the bin.

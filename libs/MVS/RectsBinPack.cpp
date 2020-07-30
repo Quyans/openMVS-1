@@ -90,9 +90,10 @@ MaxRectsBinPack::Rect MaxRectsBinPack::Insert(int width, int height, FreeRectCho
 
 bool MaxRectsBinPack::Insert(RectArr& rects, FreeRectChoiceHeuristic method)
 {
-	cList<IDX, IDX, 0> indices(rects.GetSize());
-	std::iota(indices.Begin(), indices.End(), 0);
+	cList<IDX, IDX, 0> indices(rects.GetSize());  
+	std::iota(indices.Begin(), indices.End(), 0);   //将indice变为 0 1 2 3....
 	RectArr newRects(rects.GetSize());
+	//这个方法是指数级的啊 遍历中还要再遍历
 	while (!rects.IsEmpty()) {
 		int bestScore1 = std::numeric_limits<int>::max();
 		int bestScore2 = std::numeric_limits<int>::max();
@@ -131,6 +132,7 @@ bool MaxRectsBinPack::Insert(RectArr& rects, FreeRectChoiceHeuristic method)
 		#else
 		FOREACH(i, rects) {
 			int score1, score2;
+
 			Rect newNode(ScoreRect(rects[i].width, rects[i].height, method, score1, score2));
 			if (score1 < bestScore1 || (score1 == bestScore1 && score2 < bestScore2)) {
 				bestScore1 = score1;
@@ -157,6 +159,7 @@ bool MaxRectsBinPack::Insert(RectArr& rects, FreeRectChoiceHeuristic method)
 		rects.RemoveAt(bestRectIndex);
 		indices.RemoveAt(bestRectIndex);
 	}
+	//Swap 方法交换两个列表的元素
 	rects.Swap(newRects);
 	return true;
 }
@@ -165,11 +168,11 @@ void MaxRectsBinPack::PlaceRect(const Rect &node)
 {
 	for (size_t i = 0; i < freeRectangles.GetSize(); ++i) {
 		if (SplitFreeNode(freeRectangles[i], node))
+		//将分割好的新小freenode添加到里面之后 删除原本的大freenode
 			freeRectangles.RemoveAtMove(i--);
 	}
-
+	//修剪freelist
 	PruneFreeList();
-
 	usedRectangles.Insert(node);
 }
 
@@ -240,9 +243,11 @@ MaxRectsBinPack::Rect MaxRectsBinPack::FindPositionForNewNodeBestShortSideFit(in
 	bestLongSideFit = std::numeric_limits<int>::max();
 
 	for (size_t i = 0; i < freeRectangles.GetSize(); ++i) {
-		// Try to place the rectangle in upright (non-flipped) orientation.
+		// Try to place the rectangle in upright (non-flipped) orientation.  尝试以直立（非翻转）方向放置矩形。
 		if (freeRectangles[i].width >= width && freeRectangles[i].height >= height) {
+			//剩下的水平偏差  ABS方法是取绝对值
 			int leftoverHoriz = ABS(freeRectangles[i].width - width);
+			//剩下的垂直偏差
 			int leftoverVert = ABS(freeRectangles[i].height - height);
 			int shortSideFit = MINF(leftoverHoriz, leftoverVert);
 			int longSideFit = MAXF(leftoverHoriz, leftoverVert);
@@ -256,7 +261,7 @@ MaxRectsBinPack::Rect MaxRectsBinPack::FindPositionForNewNodeBestShortSideFit(in
 				bestLongSideFit = longSideFit;
 			}
 		}
-
+		//如果是当前自由矩形宽比高长   当前自由矩形高比宽长 就把他向左旋转九十度
 		if (freeRectangles[i].width >= height && freeRectangles[i].height >= width) {
 			int flippedLeftoverHoriz = ABS(freeRectangles[i].width - height);
 			int flippedLeftoverVert = ABS(freeRectangles[i].height - width);
@@ -424,30 +429,37 @@ MaxRectsBinPack::Rect MaxRectsBinPack::FindPositionForNewNodeContactPoint(int wi
 
 bool MaxRectsBinPack::SplitFreeNode(Rect freeNode, const Rect &usedNode)
 {
-	// Test with SAT if the rectangles even intersect.
+
+	//传过来的usednode已经是在某个freenode之中的了
+	// Test with SAT if the rectangles even intersect.  判断usednode是否与freenode相离 
 	if (usedNode.x >= freeNode.x + freeNode.width || usedNode.x + usedNode.width <= freeNode.x ||
 		usedNode.y >= freeNode.y + freeNode.height || usedNode.y + usedNode.height <= freeNode.y)
 		return false;
 
+	//usedNode的左上角x坐标小于 freenode右上角的x坐标 &&  used的左上角的x坐标大于freenode左上角的x坐标
+	//这个判断条件是 左相交 usednode内含freenode 或者 freenode内含usednode  右相交都可以进入条件
 	if (usedNode.x < freeNode.x + freeNode.width && usedNode.x + usedNode.width > freeNode.x) {
 		// New node at the top side of the used node.
+		//usednode的下边在freenode中
 		if (usedNode.y > freeNode.y && usedNode.y < freeNode.y + freeNode.height) {
 			Rect newNode = freeNode;
 			newNode.height = usedNode.y - newNode.y;
 			freeRectangles.Insert(newNode);
 		}
 
-		// New node at the bottom side of the used node.
+		// New node at the bottom side of the used node.   如果usednode在freenode的下方  下相交 
 		if (usedNode.y + usedNode.height < freeNode.y + freeNode.height) {
 			Rect newNode = freeNode;
-			newNode.y = usedNode.y + usedNode.height;
+			newNode.y = usedNode.y + usedNode.height;   
 			newNode.height = freeNode.y + freeNode.height - (usedNode.y + usedNode.height);
+			//相当于进行了一个分割
 			freeRectangles.Insert(newNode);
 		}
 	}
-
+	//下相交  内含于freenode或者 外包于freenode   或者上相交
 	if (usedNode.y < freeNode.y + freeNode.height && usedNode.y + usedNode.height > freeNode.y) {
 		// New node at the left side of the used node.
+		//freenode在usednode的左侧
 		if (usedNode.x > freeNode.x && usedNode.x < freeNode.x + freeNode.width) {
 			Rect newNode = freeNode;
 			newNode.width = usedNode.x - newNode.x;

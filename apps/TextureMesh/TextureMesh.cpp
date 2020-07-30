@@ -257,7 +257,7 @@ int main(int argc, LPCTSTR* argv)
 	}
 
 	if (OPT::nOrthoMapResolution) {
-		// project mesh as an orthographic image
+		// project mesh as an orthographic image  正交图像
 		ProjectOrtho:
 		Image8U3 imageRGB;
 		Image8U imageRGBA[4];
