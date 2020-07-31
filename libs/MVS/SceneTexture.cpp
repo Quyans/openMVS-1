@@ -1810,6 +1810,8 @@ void MeshTexture::LocalSeamLeveling()
 void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLeveling, unsigned nTextureSizeMultiple, unsigned nRectPackingHeuristic, Pixel8U colEmpty)
 {
 	// project patches in the corresponding view and compute texture-coordinates and bounding-box
+
+	typedef Eigen::Matrix<float,2,1> POINT;
 	const int border(2);
 	//三角面片有三个顶点 因此*3
 	faceTexcoords.Resize(faces.GetSize()*3);
@@ -1840,7 +1842,11 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			for (int i=0; i<3; ++i) {
 				texcoords[i] = imageData.camera.ProjectPointP(vertices[face[i]]);
 				ASSERT(imageData.image.isInsideWithBorder(texcoords[i], border));
-				aabb.InsertFull(texcoords[i]);
+				POINT pt ;
+				pt[0] = texcoords[i].x;
+				pt[1] = texcoords[i].y;
+				
+				aabb.InsertFull(pt);
 			}
 		}
 		// compute relative texture coordinates

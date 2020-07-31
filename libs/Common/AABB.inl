@@ -215,6 +215,8 @@ void TAABB<TYPE,DIMS>::InsertFull(const POINT& pt)
 		ptMax[2] = pt[2];
 	}
 }
+
+
 // same as above, but for the initialized case
 template <typename TYPE, int DIMS>
 void TAABB<TYPE,DIMS>::Insert(const POINT& pt)
