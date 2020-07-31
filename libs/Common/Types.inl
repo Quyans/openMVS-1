@@ -662,7 +662,7 @@ FORCEINLINE bool ISFINITE(const cv::Matx<TYPE,m,n>& v)
 	return ISFINITE(v.val, m*n);
 }
 template <typename TYPE, int R, int C>
-FORCEINLINE bool ISFINITE(const Eigen::Matrix<TYPE,R,C>& m)
+FORCEINLINE bool ISFINITE(const  Eigen::Matrix<TYPE,R,C>& m)
 {
 	return ISFINITE(m.data(), m.size());
 }

@@ -238,6 +238,10 @@ void TAABB<TYPE,DIMS>::Insert(const POINT& pt)
 		ptMax[2] = pt[2];
 	}
 }
+
+
+
+
 /*----------------------------------------------------------------*/
 
 // Update the box such that it contains the given point.

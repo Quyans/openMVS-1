@@ -28,6 +28,7 @@ class TAABB
 public:
 	typedef TYPE Type;
 	typedef Eigen::Matrix<TYPE,DIMS,1> POINT;
+	//no suitable user-defined conversion from "TexCoord" to "const Eigen::Matrix<float, 2, 1, 0, 2, 1>" exists
 	typedef Eigen::Matrix<TYPE,DIMS,DIMS,Eigen::RowMajor> MATRIX;
 	enum { numChildren = (2<<(DIMS-1)) };
 	enum { numCorners = (DIMS==1 ? 2 : (DIMS==2 ? 4 : 8)) }; // 2^DIMS
@@ -59,9 +60,9 @@ public:
 	inline void Enlarge(TYPE);
 	inline void EnlargePercent(TYPE);
 
-		   void InsertFull(const POINT&);
-		   void Insert(const POINT&);
-		   void Insert(const TAABB&);
+		void InsertFull(const POINT&);
+		void Insert(const POINT&);
+		void Insert(const TAABB&);
 
 	inline void Translate(const POINT&);
 	inline void Transform(const MATRIX&);

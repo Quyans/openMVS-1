@@ -132,7 +132,7 @@ bool MaxRectsBinPack::Insert(RectArr& rects, FreeRectChoiceHeuristic method)
 		#else
 		FOREACH(i, rects) {
 			int score1, score2;
-
+		
 			Rect newNode(ScoreRect(rects[i].width, rects[i].height, method, score1, score2));
 			if (score1 < bestScore1 || (score1 == bestScore1 && score2 < bestScore2)) {
 				bestScore1 = score1;

@@ -192,7 +192,7 @@ struct MeshTexture {
 
 	// represents a texture patch
 	struct TexturePatch {
-		Label label; // view index
+		Label label; // view index  
 		Mesh::FaceIdxArr faces; // indices of the faces contained by the patch
 		RectsBinPack::Rect rect; // the bounding box in the view containing the patch  包含面片的视图中的边界框
 	};
@@ -436,7 +436,7 @@ public:
 	Mesh::VertexFacesArr& vertexFaces; // for each vertex, the list of faces containing it
 	BoolArr& vertexBoundary; // for each vertex, stores if it is at the boundary or not
 	Mesh::TexCoordArr& faceTexcoords; // for each face, the texture-coordinates of the vertices
-	Image8U3& textureDiffuse; // texture containing the diffuse color
+	Image8U3& textureDiffuse; // texture containing the diffuse color  包含漫反射颜色的纹理
 
 	// constant the entire time
 	Mesh::VertexArr& vertices;
@@ -761,7 +761,7 @@ bool MeshTexture::FaceOutlierDetection(FaceDataArr& faceDatas, float thOutlier) 
 	Eigen::Matrix3Xd colorsAll(3, faceDatas.GetSize());
 	BoolArr inliers(faceDatas.GetSize());
 	FOREACH(i, faceDatas) {
-		colorsAll.col(i) = ((const Color::EVec)faceDatas[i].color).cast<double>();
+		colorsAll.col(i) = ((const Color::EVec) faceDatas[i].color).cast<double>();
 		inliers[i] = true;
 	}
 
@@ -1811,6 +1811,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 {
 	// project patches in the corresponding view and compute texture-coordinates and bounding-box
 	const int border(2);
+	//三角面片有三个顶点 因此*3
 	faceTexcoords.Resize(faces.GetSize()*3);
 	#ifdef TEXOPT_USE_OPENMP
 	const unsigned numPatches(texturePatches.GetSize()-1);
@@ -1823,10 +1824,11 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 	#endif
 		const Image& imageData = images[texturePatch.label];
 		// project vertices and compute bounding-box  包围盒
-		//基本轴对齐边框类
+		//基本轴对齐边框类 
 		AABB2f aabb(true);
 		//这个函数就是个遍历器 返回指向容器最开始位置数据的指针 后面的是数组
 		FOREACHPTR(pIdxFace, texturePatch.faces) {
+			//indices 是index的复数 索引
 			//*pIdxFace  是取出pldxFace这个指针指的那个值 
 			const FIndex idxFace(*pIdxFace);
 			//根据索引取出face
@@ -1834,7 +1836,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//faceTexcoords 是纹理坐标的数组
 
 			TexCoord* texcoords = faceTexcoords.Begin()+idxFace*3;
-			//问题：为什么需要*3
+			//三个顶点
 			for (int i=0; i<3; ++i) {
 				texcoords[i] = imageData.camera.ProjectPointP(vertices[face[i]]);
 				ASSERT(imageData.image.isInsideWithBorder(texcoords[i], border));
@@ -1990,12 +1992,16 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			int x(0), y(1);
 			if (texturePatch.label != NO_ID) {
 				const Image& imageData = images[texturePatch.label];
+
+				//问题：这一句看不明白！！！！！！！！！！
 				cv::Mat patch(imageData.image(texturePatch.rect));
 				if (rect.width != texturePatch.rect.width) {
-					// flip patch and texture-coordinates  翻转面片和纹理坐标
+					// flip patch and texture-coordinates  翻转面片和纹理坐标  t()是矩阵转置
 					patch = patch.t();
 					x = 1; y = 0;
 				}
+
+				//返回一个子矩阵textureDiffuse(rect) ， 将patch这个矩阵拷贝到 textureDiffuse(rect)这个子矩阵中
 				patch.copyTo(textureDiffuse(rect));
 			}
 			// compute final texture coordinates
