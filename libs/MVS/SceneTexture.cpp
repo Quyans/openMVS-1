@@ -36,7 +36,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/connected_components.hpp>
-#include<Eigen>
+#include<Eigen/Eigen>
 
 using namespace MVS;
 
@@ -1845,23 +1845,31 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				POINT pt ;
 				pt[0] = texcoords[i].x;
 				pt[1] = texcoords[i].y;
-				
 				aabb.InsertFull(pt);
 			}
 		}
+		Point2f ptMin,ptMax;
+		ptMin.x=aabb.ptMin[0];
+		ptMin.y=aabb.ptMin[1];
+		ptMax.x = aabb.ptMax[0];
+		ptMax.y = aabb.ptMax[1];
 		// compute relative texture coordinates
-		ASSERT(imageData.image.isInside(Point2f(aabb.ptMin)));
-		ASSERT(imageData.image.isInside(Point2f(aabb.ptMax)));
+		ASSERT(imageData.image.isInside(ptMin));
+		ASSERT(imageData.image.isInside(ptMax));
+
 		//下取整
 		texturePatch.rect.x = FLOOR2INT(aabb.ptMin[0])-border;
 		texturePatch.rect.y = FLOOR2INT(aabb.ptMin[1])-border;
+
+		//在以ptmin为左下角顶点和 以 ptmax为右上角顶点的矩形外包裹一层border 宽度为2像素
 		//aabb.ptMax[0]存的好像是 右上角角的点的x坐标 aabb.ptMax[1]存的 是右上角的y坐标
 		//aabb.ptMin[0]存的是左下角的x坐标 aabb.ptMin[1]) 存的是左下角的y坐标
 		texturePatch.rect.width = CEIL2INT(aabb.ptMax[0]-aabb.ptMin[0])+border*2;
 		texturePatch.rect.height = CEIL2INT(aabb.ptMax[1]-aabb.ptMin[1])+border*2;
+
 		ASSERT(imageData.image.isInside(texturePatch.rect.tl()));
 		ASSERT(imageData.image.isInside(texturePatch.rect.br()));
-		// tl()是top left 的点的坐标  br()右下角坐标
+		// tl()在我的理解是左下角的坐标  这里面的rect的xy 都是左下角的坐标
 		const TexCoord offset(texturePatch.rect.tl());
 
 
@@ -1869,11 +1877,10 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			const FIndex idxFace(*pIdxFace);
 			TexCoord* texcoords = faceTexcoords.Begin()+idxFace*3;
 			for (int v=0; v<3; ++v)
+			//以矩形左下角为原点重新标记坐标
 				texcoords[v] -= offset;
 		}
 	}
-
-
 	{
 		// init last patch to point to a small uniform color patch
 		TexturePatch& texturePatch = texturePatches.Last();
@@ -1898,6 +1905,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			GlobalSeamLeveling();
 			DEBUG_ULTIMATE("\tglobal seam leveling completed (%s)", TD_TIMER_GET_FMT().c_str());
 		}
+		//
 
 		// perform local seam leveling
 		if (bLocalSeamLeveling) {
@@ -1935,16 +1943,41 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 
 	// create texture
 	{
+		int threshold = 500;  //分类的阈值 设置为500px
 		// arrange texture patches to fit the smallest possible texture image
 		RectsBinPack::RectArr rects(texturePatches.GetSize());
+		RectsBinPack::RectArr bigRects;
+		RectsBinPack::RectArr smallRects;
+	
+		int indexSm=0;
+		int indexBg = 0;
+
+		//classify the patches with different size 
+		//big patch: >500px  ;  small patch <500px
 		FOREACH(i, texturePatches)
 			rects[i] = texturePatches[i].rect;
+			if (texturePatches[i].rect.x<=threshold&&texturePatches[i].rect.x<=threshold)
+			{
+				//small patch
+				smallRects.Allocate();
+				smallRects[indexSm++] = texturePatches[i].rect;
+			}else
+			{
+				//big patch
+				bigRects.Allocate();
+				bigRects[indexBg++] = texturePatches[i].rect;
+			}
+
+		int textureSizeSm(RectsBinPack::ComputeTextureSize(smallRects,nTextureSizeMultiple));
+		int textureSizeBg(RectsBinPack::ComputeTextureSize(bigRects,nTextureSizeMultiple));
 		int textureSize(RectsBinPack::ComputeTextureSize(rects, nTextureSizeMultiple));
 		// increase texture size till all patches fit
+		
+		/**
 		while (true) {
 			TD_TIMER_STARTD();
 			bool bPacked(false);
-			//nRectPackingHeuristic  是 0 3 100三种
+			//nRectPackingHeuristic  是 0 3 100三种  
 			//0 - best fit, 3 - good speed, 100 - best speed
 			const unsigned typeRectsBinPack(nRectPackingHeuristic/100);
 			const unsigned typeSplit((nRectPackingHeuristic-typeRectsBinPack*100)/10);
@@ -1976,6 +2009,83 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				break;
 			//如果大小不够就*2
 			textureSize *= 2;
+		}
+		**/
+
+		//对小纹理集进行排布
+		while (true) {
+			TD_TIMER_STARTD();
+			bool bPacked(false);
+			//nRectPackingHeuristic  是 0 3 100三种  
+			//0 - best fit, 3 - good speed, 100 - best speed
+			const unsigned typeRectsBinPack(nRectPackingHeuristic/100);
+			const unsigned typeSplit((nRectPackingHeuristic-typeRectsBinPack*100)/10);
+			const unsigned typeHeuristic(nRectPackingHeuristic%10);
+			
+			switch (typeRectsBinPack) {
+			case 0: {
+				//best fit
+				MaxRectsBinPack pack(textureSizeSm, textureSizeSm);
+				bPacked = pack.Insert(smallRects, (MaxRectsBinPack::FreeRectChoiceHeuristic)typeHeuristic);
+				break; }
+			case 1: {
+				//best speed
+				SkylineBinPack pack(textureSizeSm, textureSizeSm, typeSplit!=0);
+				bPacked = pack.Insert(smallRects, (SkylineBinPack::LevelChoiceHeuristic)typeHeuristic);
+				break; }
+			case 2: {
+			
+				GuillotineBinPack pack(textureSizeSm, textureSizeSm);
+				bPacked = pack.Insert(smallRects, false, (GuillotineBinPack::FreeRectChoiceHeuristic)typeHeuristic, (GuillotineBinPack::GuillotineSplitHeuristic)typeSplit);
+				break; }
+			default:
+				ABORT("error: unknown RectsBinPack type");
+			}
+
+			DEBUG_ULTIMATE("\tpacking texture completed: %u patches, %u texture-size (%s)", smallRects.GetSize(), textureSizeSm, TD_TIMER_GET_FMT().c_str());
+			if (bPacked)
+				break;
+			//如果大小不够就*2
+			//先这样 后期再调整
+			textureSizeSm *= 2;
+		}
+		//对大纹理集进行排布
+		while (true) {
+			TD_TIMER_STARTD();
+			bool bPacked(false);
+			//nRectPackingHeuristic  是 0 3 100三种  
+			//0 - best fit, 3 - good speed, 100 - best speed
+			const unsigned typeRectsBinPack(nRectPackingHeuristic/100);
+			const unsigned typeSplit((nRectPackingHeuristic-typeRectsBinPack*100)/10);
+			const unsigned typeHeuristic(nRectPackingHeuristic%10);
+
+
+			switch (typeRectsBinPack) {
+			case 0: {
+				//best fit
+				MaxRectsBinPack pack(textureSizeBg, textureSizeBg);
+				bPacked = pack.Insert(bigRects, (MaxRectsBinPack::FreeRectChoiceHeuristic)typeHeuristic);
+				break; }
+			case 1: {
+				//best speed
+				SkylineBinPack pack(textureSizeBg, textureSizeBg, typeSplit!=0);
+				bPacked = pack.Insert(bigRects, (SkylineBinPack::LevelChoiceHeuristic)typeHeuristic);
+				break; }
+			case 2: {
+				//afjlka
+				
+				GuillotineBinPack pack(textureSizeBg, textureSizeBg);
+				bPacked = pack.Insert(bigRects, false, (GuillotineBinPack::FreeRectChoiceHeuristic)typeHeuristic, (GuillotineBinPack::GuillotineSplitHeuristic)typeSplit);
+				break; }
+			default:
+				ABORT("error: unknown RectsBinPack type");
+			}
+
+			DEBUG_ULTIMATE("\tpacking texture completed: %u patches, %u texture-size (%s)", bigRects.GetSize(), textureSizeBg, TD_TIMER_GET_FMT().c_str());
+			if (bPacked)
+				break;
+			//如果大小不够就*2
+			textureSizeBg*= 2;
 		}
 
 		// create texture image

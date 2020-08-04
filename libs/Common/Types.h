@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
-#include <Eigen>
+#include <Eigen/Eigen>
 #endif
 #ifdef _SUPPORT_CPP11
 #ifdef __clang__
