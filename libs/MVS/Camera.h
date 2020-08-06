@@ -274,6 +274,8 @@ public:
 	}
 	template <typename TYPE>
 	inline TPoint3<TYPE> ProjectPointP3(const TPoint3<TYPE>& X) const {
+		//P是个3*4的投影矩阵
+		//将TPOINT3扩展为了一个齐次坐标  即4*1的坐标 然后投影矩阵×其次坐标 即   3*4 × 4*1
 		const REAL* const p(P.val);
 		return TPoint3<TYPE>(
 			(TYPE)(p[0*4+0]*X.x + p[0*4+1]*X.y + p[0*4+2]*X.z + p[0*4+3]),
@@ -284,6 +286,8 @@ public:
 	inline TPoint2<TYPE> ProjectPointP(const TPoint3<TYPE>& X) const {
 		const TPoint3<TYPE> q(ProjectPointP3(X));
 		const TYPE invZ(INVERT(q.z));
+		//为什么要返回  x/z  y/z ？？
+		
 		return TPoint2<TYPE>(q.x*invZ, q.y*invZ);
 	}
 

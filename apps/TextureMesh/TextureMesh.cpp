@@ -251,6 +251,7 @@ int main(int argc, LPCTSTR* argv)
 
 	// save the final mesh
 	scene.Save(baseFileName+_T(".mvs"), (ARCHIVE_TYPE ) OPT::nArchiveType);
+	//在这里存储文件
 	scene.mesh.Save(baseFileName+OPT::strExportType);
 	#if TD_VERBOSE != TD_VERBOSE_OFF
 	if (VERBOSITY_LEVEL > 2)

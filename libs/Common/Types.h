@@ -1217,6 +1217,7 @@ template<typename _Tp>
 inline _Tp    INVZERO(_Tp)					{ return std::numeric_limits<_Tp>::max(); }
 
 template<typename _Tp>
+//求倒数
 inline _Tp    INVERT(_Tp    x)				{ return (x==_Tp(0) ? INVZERO(x) : _Tp(1)/x); }
 
 template<typename _Tp>

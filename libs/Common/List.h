@@ -391,6 +391,11 @@ public:
 		ASSERT(_size > 0);
 		return _vector[_size-1];
 	}
+	inline TYPE&	LastNoConst()
+	{
+		ASSERT(_size > 0);
+		return _vector[_size-1];
+	}
 
 	// Adds a new empty element at the end of the array.
 	inline TYPE&	AddEmpty()

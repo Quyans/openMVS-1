@@ -1824,6 +1824,8 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 	for (TexturePatch *pTexturePatch=texturePatches.Begin(), *pTexturePatchEnd=texturePatches.End()-1; pTexturePatch<pTexturePatchEnd; ++pTexturePatch) {
 		TexturePatch& texturePatch = *pTexturePatch;
 	#endif
+
+	
 		const Image& imageData = images[texturePatch.label];
 		// project vertices and compute bounding-box  包围盒
 		//基本轴对齐边框类 
@@ -1841,6 +1843,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//三个顶点
 			for (int i=0; i<3; ++i) {
 				texcoords[i] = imageData.camera.ProjectPointP(vertices[face[i]]);
+				//ProjectPointP 生成的是uv坐标
 				ASSERT(imageData.image.isInsideWithBorder(texcoords[i], border));
 				POINT pt ;
 				pt[0] = texcoords[i].x;
@@ -1872,7 +1875,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		// tl()在我的理解是左下角的坐标  这里面的rect的xy 都是左下角的坐标
 		const TexCoord offset(texturePatch.rect.tl());
 
-
+		//只需要记录一个texturePatch的左下角的xy坐标 即可 其他的都是相对于这个左下角的坐标的相对坐标
 		FOREACHPTR(pIdxFace, texturePatch.faces) {
 			const FIndex idxFace(*pIdxFace);
 			TexCoord* texcoords = faceTexcoords.Begin()+idxFace*3;
@@ -1881,9 +1884,12 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				texcoords[v] -= offset;
 		}
 	}
+
+	//以上是对每个texturePatch的操作
 	{
 		// init last patch to point to a small uniform color patch
-		TexturePatch& texturePatch = texturePatches.Last();
+		// TexturePatch* testPtr = texturePatches.Last();
+		TexturePatch& texturePatch =  texturePatches.Last();
 		const int sizePatch(border*2+1);
 		texturePatch.rect = cv::Rect(0,0, sizePatch,sizePatch);
 		FOREACHPTR(pIdxFace, texturePatch.faces) {
@@ -2073,7 +2079,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				break; }
 			case 2: {
 				//afjlka
-				
+
 				GuillotineBinPack pack(textureSizeBg, textureSizeBg);
 				bPacked = pack.Insert(bigRects, false, (GuillotineBinPack::FreeRectChoiceHeuristic)typeHeuristic, (GuillotineBinPack::GuillotineSplitHeuristic)typeSplit);
 				break; }
