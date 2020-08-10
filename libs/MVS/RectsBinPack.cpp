@@ -99,6 +99,7 @@ bool MaxRectsBinPack::Insert(RectArr& rects, FreeRectChoiceHeuristic method)
 		int bestScore2 = std::numeric_limits<int>::max();
 		IDX bestRectIndex = NO_IDX;
 		Rect bestNode;
+		
 
 		// find the best place to store this rectangle
 		#ifdef RECTPACK_USE_OPENMP
@@ -154,7 +155,7 @@ bool MaxRectsBinPack::Insert(RectArr& rects, FreeRectChoiceHeuristic method)
 
 		// store rectangle
 		PlaceRect(bestNode);
-
+		//bestNode中存储有矩形左下角的xy坐标 以及 height width 
 		newRects[indices[bestRectIndex]] = bestNode;
 		rects.RemoveAt(bestRectIndex);
 		indices.RemoveAt(bestRectIndex);

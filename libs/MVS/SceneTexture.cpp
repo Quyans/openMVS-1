@@ -188,6 +188,7 @@ struct MeshTexture {
 
 	// used to assign a view to a face
 	typedef uint32_t Label;
+	typedef uint32_t MapIndex;
 	typedef cList<Label,Label,0,1024,FIndex> LabelArr;
 
 	// represents a texture patch
@@ -195,6 +196,7 @@ struct MeshTexture {
 		Label label; // view index  
 		Mesh::FaceIdxArr faces; // indices of the faces contained by the patch
 		RectsBinPack::Rect rect; // the bounding box in the view containing the patch  包含面片的视图中的边界框
+		MapIndex mapindex; //标记了在哪一个地图上
 	};
 	typedef cList<TexturePatch,const TexturePatch&,1,1024,FIndex> TexturePatchArr;
 
@@ -2094,10 +2096,13 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			textureSizeBg*= 2;
 		}
 
+		//返回来的一系列rects与之前的顺序是相同的 只不过xy坐标换了 width 和height可能会调转（旋转90°）
+
 		// create texture image
 		const float invNorm(1.f/(float)(textureSize-1));
 		textureDiffuse.create(textureSize, textureSize);
 		//Scalar 标量
+		//设置空白区域颜色
 		textureDiffuse.setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
 		#ifdef TEXOPT_USE_OPENMP
 		#pragma omp parallel for schedule(dynamic)
@@ -2124,6 +2129,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				}
 
 				//返回一个子矩阵textureDiffuse(rect) ， 将patch这个矩阵拷贝到 textureDiffuse(rect)这个子矩阵中
+				//textureDiffuse应该就是那个地图   //这是个引用
 				patch.copyTo(textureDiffuse(rect));
 			}
 			// compute final texture coordinates

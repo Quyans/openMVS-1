@@ -45,6 +45,14 @@ using namespace MVS;
 
 // S T R U C T S ///////////////////////////////////////////////////
 
+enum ARCHIVE_TYPE {
+	ARCHIVE_MVS = -1,
+	ARCHIVE_TEXT = 0,
+	ARCHIVE_BINARY,
+	ARCHIVE_BINARY_ZIP,
+	ARCHIVE_LAST
+};
+
 namespace OPT {
 String strInputFileName;
 String strOutputFileName;
@@ -259,8 +267,10 @@ int main(int argc, LPCTSTR* argv)
 	#endif
 	}
 
+
+//好像没有调用
 	if (OPT::nOrthoMapResolution) {
-		// project mesh as an orthographic image  正交图像
+		// project mesh as an orthographic image  正交图像                         
 		ProjectOrtho:
 		Image8U3 imageRGB;
 		Image8U imageRGBA[4];
