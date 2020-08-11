@@ -66,7 +66,7 @@ bool Scene::IsEmpty() const
 {
 	return pointcloud.IsEmpty() && mesh.IsEmpty();
 }
-
+//
 
 bool Scene::LoadInterface(const String & fileName)
 {

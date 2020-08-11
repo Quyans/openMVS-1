@@ -30,6 +30,7 @@
  */
 
 #include "../../libs/MVS/Common.h"
+
 #include "../../libs/MVS/Scene.h"
 #include <boost/program_options.hpp>
 //新添加
@@ -256,7 +257,7 @@ int main(int argc, LPCTSTR* argv)
 	if (!scene.TextureMesh(OPT::nResolutionLevel, OPT::nMinResolution, OPT::fOutlierThreshold, OPT::fRatioDataSmoothness, OPT::bGlobalSeamLeveling, OPT::bLocalSeamLeveling, OPT::nTextureSizeMultiple, OPT::nRectPackingHeuristic, Pixel8U(OPT::nColEmpty)))
 		return EXIT_FAILURE;
 	VERBOSE("Mesh texturing completed: %u vertices, %u faces (%s)", scene.mesh.vertices.GetSize(), scene.mesh.faces.GetSize(), TD_TIMER_GET_FMT().c_str());
-
+	
 	// save the final mesh
 	scene.Save(baseFileName+_T(".mvs"), (ARCHIVE_TYPE ) OPT::nArchiveType);
 	//在这里存储文件
@@ -265,7 +266,7 @@ int main(int argc, LPCTSTR* argv)
 	if (VERBOSITY_LEVEL > 2)
 		scene.ExportCamerasMLP(baseFileName+_T(".mlp"), baseFileName+OPT::strExportType);
 	#endif
-	}
+	}	
 
 
 //好像没有调用

@@ -7,7 +7,8 @@
 
 
 // D E F I N E S ///////////////////////////////////////////////////
-
+// #include "ConfigTable.h"
+#include "Types.h"
 
 // S T R U C T S ///////////////////////////////////////////////////
 
@@ -3336,7 +3337,7 @@ TYPE InvertMatrix3x3(const TYPE* m, TYPE* mi) {
 
 // C L A S S  //////////////////////////////////////////////////////
 
-#ifdef _USE_EIGEN
+#ifdef   _USE_EIGEN
 
 ///Compute a rotation exponential using the Rodrigues Formula.
 ///The rotation axis is given by \f$\vec{w}\f$, and the rotation angle must

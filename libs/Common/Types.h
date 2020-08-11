@@ -11,9 +11,12 @@
 
 // I N C L U D E S /////////////////////////////////////////////////
 
+#include"ConfigLocal.h"
+
 #ifdef _MSC_VER
 #include <windows.h>
 #include <tchar.h>
+
 #else
 #include <stdio.h>
 #include <stdlib.h>
