@@ -45,13 +45,7 @@ using namespace MVS;
 
 // S T R U C T S ///////////////////////////////////////////////////
 
-enum ARCHIVE_TYPE {
-	ARCHIVE_MVS = -1,
-	ARCHIVE_TEXT = 0,
-	ARCHIVE_BINARY,
-	ARCHIVE_BINARY_ZIP,
-	ARCHIVE_LAST
-};
+
 
 
 void Scene::Release()

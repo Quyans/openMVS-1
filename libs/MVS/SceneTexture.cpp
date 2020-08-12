@@ -1962,7 +1962,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 
 		//classify the patches with different size 
 		//big patch: >500px  ;  small patch <500px
-		FOREACH(i, texturePatches)
+		FOREACH(i, texturePatches){
 			rects[i] = texturePatches[i].rect;
 			if (texturePatches[i].rect.x<=threshold&&texturePatches[i].rect.x<=threshold)
 			{
@@ -1975,6 +1975,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				bigRects.Allocate();
 				bigRects[indexBg++] = texturePatches[i].rect;
 			}
+		}
 
 		int textureSizeSm(RectsBinPack::ComputeTextureSize(smallRects,nTextureSizeMultiple));
 		int textureSizeBg(RectsBinPack::ComputeTextureSize(bigRects,nTextureSizeMultiple));
