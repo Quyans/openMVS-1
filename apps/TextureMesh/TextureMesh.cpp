@@ -46,13 +46,6 @@ using namespace MVS;
 
 // S T R U C T S ///////////////////////////////////////////////////
 
-enum ARCHIVE_TYPE {
-	ARCHIVE_MVS = -1,
-	ARCHIVE_TEXT = 0,
-	ARCHIVE_BINARY,
-	ARCHIVE_BINARY_ZIP,
-	ARCHIVE_LAST
-};
 
 namespace OPT {
 String strInputFileName;
@@ -241,7 +234,7 @@ int main(int argc, LPCTSTR* argv)
 	}
 
 	{
-	// decimate to the desired resolution
+	// decimate to the desired resolution   抽取到指定的分辨率
 	if (OPT::fDecimateMesh < 1.f) {
 		ASSERT(OPT::fDecimateMesh > 0.f);
 		scene.mesh.Clean(OPT::fDecimateMesh, 0.f, false, OPT::nCloseHoles, 0u, false);
@@ -262,12 +255,14 @@ int main(int argc, LPCTSTR* argv)
 	scene.Save(baseFileName+_T(".mvs"), (ARCHIVE_TYPE ) OPT::nArchiveType);
 	//在这里存储文件
 	scene.mesh.Save(baseFileName+OPT::strExportType);
+	
+
 	#if TD_VERBOSE != TD_VERBOSE_OFF
 	if (VERBOSITY_LEVEL > 2)
 		scene.ExportCamerasMLP(baseFileName+_T(".mlp"), baseFileName+OPT::strExportType);
 	#endif
 	}	
-
+	
 
 //好像没有调用
 	if (OPT::nOrthoMapResolution) {

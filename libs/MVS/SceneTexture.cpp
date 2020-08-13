@@ -1851,6 +1851,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				pt[0] = texcoords[i].x;
 				pt[1] = texcoords[i].y;
 				aabb.InsertFull(pt);
+				
 			}
 		}
 		Point2f ptMin,ptMax;
@@ -1922,7 +1923,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			DEBUG_ULTIMATE("\tlocal seam leveling completed (%s)", TD_TIMER_GET_FMT().c_str());
 		}
 	}
-
+	
 	// merge texture patches with overlapping rectangles 使用重叠矩形合并纹理面片
 	for (unsigned i=0; i<texturePatches.GetSize()-2; ++i) {
 		TexturePatch& texturePatchBig = texturePatches[i];
