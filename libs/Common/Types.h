@@ -17,7 +17,7 @@
 #include <tchar.h>
 
 #else
-#include <ConfigLocal.h>
+#include  <OpenMVS/ConfigLocal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
