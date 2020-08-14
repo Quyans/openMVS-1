@@ -28,7 +28,7 @@
 *      that material or in the Appropriate Legal Notices displayed by works
 *      containing it.
 */
-
+#include <CGAL/circulator.h>
 #include "Common.h"
 #include "Mesh.h"
 // fix non-manifold vertices
@@ -1455,9 +1455,9 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 	// export comments
 	FOREACHPTR(pStr, comments)
 		ply.append_comment(pStr->c_str());
-
+		
 	// export texture file name as comment if needed
-	String textureFileName;
+	String textureFileName;   //
 	if (!faceTexcoords.IsEmpty() && !textureDiffuse.empty()) {
 		textureFileName = Util::getFileFullName(fileName)+_T(".png");
 		ply.append_comment((_T("TextureFile ")+Util::getFileNameExt(textureFileName)).c_str());

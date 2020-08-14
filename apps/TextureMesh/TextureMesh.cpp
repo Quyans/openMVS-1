@@ -251,12 +251,12 @@ int main(int argc, LPCTSTR* argv)
 		return EXIT_FAILURE;
 	VERBOSE("Mesh texturing completed: %u vertices, %u faces (%s)", scene.mesh.vertices.GetSize(), scene.mesh.faces.GetSize(), TD_TIMER_GET_FMT().c_str());
 
-	// save the final mesh
+	// 在这里存储的是  .mvs文件
 	scene.Save(baseFileName+_T(".mvs"), (ARCHIVE_TYPE ) OPT::nArchiveType);
-	//在这里存储文件
+	//在这里存储的是   纹理地图png和ply文件
 	scene.mesh.Save(baseFileName+OPT::strExportType);
 	
-	
+
 	#if TD_VERBOSE != TD_VERBOSE_OFF
 	if (VERBOSITY_LEVEL > 2)
 		scene.ExportCamerasMLP(baseFileName+_T(".mlp"), baseFileName+OPT::strExportType);
