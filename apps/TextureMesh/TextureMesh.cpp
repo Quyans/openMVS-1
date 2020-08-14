@@ -256,7 +256,7 @@ int main(int argc, LPCTSTR* argv)
 	//在这里存储文件
 	scene.mesh.Save(baseFileName+OPT::strExportType);
 	
-
+	
 	#if TD_VERBOSE != TD_VERBOSE_OFF
 	if (VERBOSITY_LEVEL > 2)
 		scene.ExportCamerasMLP(baseFileName+_T(".mlp"), baseFileName+OPT::strExportType);
