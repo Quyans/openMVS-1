@@ -230,6 +230,7 @@ int main(int argc, LPCTSTR* argv)
 	const String baseFileName(MAKE_PATH_SAFE(Util::getFileFullName(OPT::strOutputFileName)));
 	if (OPT::nOrthoMapResolution && !scene.mesh.textureDiffuse.empty()) {
 		// the input mesh is already textured and an orthographic projection was requested
+		//输入的网格已经纹理化，接下来需要进行正交投影
 		goto ProjectOrtho;
 	}
 
@@ -256,7 +257,7 @@ int main(int argc, LPCTSTR* argv)
 	//在这里存储的是   纹理地图png和ply文件
 	scene.mesh.Save(baseFileName+OPT::strExportType);
 	
-
+	
 	#if TD_VERBOSE != TD_VERBOSE_OFF
 	if (VERBOSITY_LEVEL > 2)
 		scene.ExportCamerasMLP(baseFileName+_T(".mlp"), baseFileName+OPT::strExportType);

@@ -439,7 +439,7 @@ public:
 	BoolArr& vertexBoundary; // for each vertex, stores if it is at the boundary or not
 	Mesh::TexCoordArr& faceTexcoords; // for each face, the texture-coordinates of the vertices
 	Image8U3& textureDiffuse; // texture containing the diffuse color  包含漫反射颜色的纹理
-
+	Image8U3* textureMapArr;  //地图文件的数组  指针修改的也是源地址的对象 已经过测试
 	// constant the entire time
 	Mesh::VertexArr& vertices;
 	Mesh::FaceArr& faces;
@@ -461,9 +461,11 @@ MeshTexture::MeshTexture(Scene& _scene, unsigned _nResolutionLevel, unsigned _nM
 	vertices(_scene.mesh.vertices),
 	faces(_scene.mesh.faces),
 	images(_scene.images),
-	scene(_scene)
+	scene(_scene),
+	textureMapArr(_scene.mesh.textureMapArr)
 {
 }
+
 MeshTexture::~MeshTexture()
 {
 	vertexFaces.Release();

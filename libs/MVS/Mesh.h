@@ -95,7 +95,7 @@ public:
 	TexCoordArr faceTexcoords; // for each face, the texture-coordinates corresponding to the contained vertices (optional)
 
 	Image8U3 textureDiffuse; // texture containing the diffuse color (optional)
-	
+	Image8U3* textureMapArr;  //地图文件的数组
 	#ifdef _USE_CUDA
 	static CUDA::KernelRT kernelComputeFaceNormal;
 	#endif
