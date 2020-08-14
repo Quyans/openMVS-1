@@ -1455,7 +1455,7 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 	// export comments
 	FOREACHPTR(pStr, comments)
 		ply.append_comment(pStr->c_str());
-		
+
 	// export texture file name as comment if needed
 	String textureFileName;   //
 	if (!faceTexcoords.IsEmpty() && !textureDiffuse.empty()) {
@@ -1463,6 +1463,7 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 		ply.append_comment((_T("TextureFile ")+Util::getFileNameExt(textureFileName)).c_str());
 	}
 
+	//vertexNormals 法线数组
 	if (vertexNormals.IsEmpty()) {
 		// describe what properties go into the vertex elements
 		ply.describe_property(BasicPLY::elem_names[0], 3, BasicPLY::vert_props);
@@ -1486,6 +1487,8 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 	}
 	if (ply.get_current_element_count() == 0)
 		return false;
+
+
 
 	if (faceTexcoords.IsEmpty()) {
 		// describe what properties go into the vertex elements
@@ -1511,7 +1514,7 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 			ply.put_element(&face);
 		}
 
-		// export the texture
+		// export the texture 在这里生成纹理地图
 		if (!textureDiffuse.empty())
 			textureDiffuse.Save(textureFileName);
 	}

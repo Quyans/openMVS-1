@@ -86,7 +86,7 @@ public:
 	VertexArr vertices;
 	FaceArr faces;
 
-	NormalArr vertexNormals; // for each vertex, the normal to the surface in that point (optional)
+	NormalArr vertexNormals; // for each vertex, the normal to the surface in that point (optional)    对于每个顶点，该点的表面法线
 	VertexVerticesArr vertexVertices; // for each vertex, the list of adjacent vertices (optional)
 	VertexFacesArr vertexFaces; // for each vertex, the list of faces containing it (optional)
 	BoolArr vertexBoundary; // for each vertex, stores if it is at the boundary or not (optional)
@@ -95,7 +95,7 @@ public:
 	TexCoordArr faceTexcoords; // for each face, the texture-coordinates corresponding to the contained vertices (optional)
 
 	Image8U3 textureDiffuse; // texture containing the diffuse color (optional)
-
+	
 	#ifdef _USE_CUDA
 	static CUDA::KernelRT kernelComputeFaceNormal;
 	#endif
