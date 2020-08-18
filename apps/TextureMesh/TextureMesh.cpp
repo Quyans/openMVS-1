@@ -71,6 +71,12 @@ String strConfigFileName;
 boost::program_options::variables_map vm;
 } // namespace OPT
 
+
+template <class T>
+int getArrayLen(T& array)
+{
+return (sizeof(array) / sizeof(array[0]));
+}
 // initialize and parse the command line parameters
 bool Initialize(size_t argc, LPCTSTR* argv)
 {
@@ -255,7 +261,8 @@ int main(int argc, LPCTSTR* argv)
 	// 在这里存储的是  .mvs文件
 	scene.Save(baseFileName+_T(".mvs"), (ARCHIVE_TYPE ) OPT::nArchiveType);
 	//在这里存储的是   纹理地图png和ply文件
-	scene.mesh.Save(baseFileName+OPT::strExportType);
+	uint32_t  mapSize = getArrayLen(scene.mesh.textureMapArr) ;
+	scene.mesh.Save(baseFileName+OPT::strExportType,mapSize);
 	
 	
 	#if TD_VERBOSE != TD_VERBOSE_OFF

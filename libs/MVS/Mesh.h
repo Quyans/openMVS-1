@@ -169,7 +169,7 @@ public:
 
 	// file IO
 	bool Load(const String& fileName);
-	bool Save(const String& fileName, const cList<String>& comments=cList<String>(), bool bBinary=true) const;
+	bool Save(const String& fileName, const cList<String>& comments=cList<String>(), bool bBinary=true, int mapNum=1) const;
 	static bool Save(const VertexArr& vertices, const String& fileName, bool bBinary=true);
 
 	static inline uint32_t FindVertex(const Face& f, VIndex v) { for (uint32_t i=0; i<3; ++i) if (f[i] == v) return i; return NO_ID; }
@@ -180,7 +180,7 @@ protected:
 	bool LoadPLY(const String& fileName);
 	bool LoadOBJ(const String& fileName);
 
-	bool SavePLY(const String& fileName, const cList<String>& comments=cList<String>(), bool bBinary=true) const;
+	bool SavePLY(const String& fileName, const cList<String>& comments=cList<String>(), bool bBinary=true, int mapNum = 1) const;
 	bool SaveOBJ(const String& fileName) const;
 
 	#ifdef _USE_CUDA

@@ -1424,7 +1424,7 @@ bool Mesh::LoadOBJ(const String& fileName)
 /*----------------------------------------------------------------*/
 
 // export the mesh to the given file
-bool Mesh::Save(const String& fileName, const cList<String>& comments, bool bBinary) const
+bool Mesh::Save(const String& fileName, const cList<String>& comments, bool bBinary, int mapNum) const
 {
 	TD_TIMER_STARTD();
 	const String ext(Util::getFileExt(fileName).ToLower());
@@ -1432,14 +1432,14 @@ bool Mesh::Save(const String& fileName, const cList<String>& comments, bool bBin
 	if (ext == _T(".obj"))
 		ret = SaveOBJ(fileName);
 	else
-		ret = SavePLY(ext != _T(".ply") ? String(fileName+_T(".ply")) : fileName, comments, bBinary);
+		ret = SavePLY(ext != _T(".ply") ? String(fileName+_T(".ply")) : fileName, comments, bBinary, mapNum);
 	if (!ret)
 		return false;
 	DEBUG_EXTRA("Mesh saved: %u vertices, %u faces (%s)", vertices.GetSize(), faces.GetSize(), TD_TIMER_GET_FMT().c_str());
 	return true;
 }
 // export the mesh as a PLY file
-bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool bBinary) const
+bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool bBinary, int mapNum) const
 {
 	ASSERT(!fileName.IsEmpty());
 	Util::ensureFolder(fileName);
@@ -1457,7 +1457,13 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 		ply.append_comment(pStr->c_str());
 
 	// export texture file name as comment if needed
-	String textureFileName;   //
+	String textureFileName;   
+	String textureFileNameList[mapNum];
+	for (int i = 0; i < mapNum; i++)
+	{
+		textureFileNameList[i] =  Util::getFileFullName(fileName)+to_string(i)+_T(".png");
+	}
+	
 	if (!faceTexcoords.IsEmpty() && !textureDiffuse.empty()) {
 		textureFileName = Util::getFileFullName(fileName)+_T(".png");
 		ply.append_comment((_T("TextureFile ")+Util::getFileNameExt(textureFileName)).c_str());

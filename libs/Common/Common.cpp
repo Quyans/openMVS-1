@@ -12,6 +12,8 @@
 #include "Common.h"
 
 namespace SEACAVE {
+	//设置level为2
+
 #if TD_VERBOSE == TD_VERBOSE_ON
 int g_nVerbosityLevel(2);
 #endif

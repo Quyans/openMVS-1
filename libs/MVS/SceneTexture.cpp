@@ -36,7 +36,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/connected_components.hpp>
-#include<Eigen/Eigen>
+// #include<Eigen/Eigen>
 
 using namespace MVS;
 
@@ -145,6 +145,7 @@ enum Mask {
 	interior = 255
 };
 
+
 struct MeshTexture {
 	// used to render the surface to a view camera
 	typedef TImage<cuint32_t> FaceMap;
@@ -188,15 +189,30 @@ struct MeshTexture {
 
 	// used to assign a view to a face
 	typedef uint32_t Label;
+	//地图编号
+	typedef uint32_t  MapNum;
+
+	//对应地图中的索引
 	typedef uint32_t MapIndex;
+
 	typedef cList<Label,Label,0,1024,FIndex> LabelArr;
+
+
+	struct PatchLoc{
+		// //在原本texturePatch中的索引
+		// int oriIndex;   
+		//分配到了哪一个地图中
+		MapNum mapNum;		
+		//在地图中的索引
+		MapIndex mapIndex;
+	};
 
 	// represents a texture patch
 	struct TexturePatch {
 		Label label; // view index  
 		Mesh::FaceIdxArr faces; // indices of the faces contained by the patch
 		RectsBinPack::Rect rect; // the bounding box in the view containing the patch  包含面片的视图中的边界框
-		MapIndex mapindex; //标记了在哪一个地图上
+		PatchLoc patchLoc; //标记了patch在纹理地图上的位置 
 	};
 	typedef cList<TexturePatch,const TexturePatch&,1,1024,FIndex> TexturePatchArr;
 
@@ -1811,10 +1827,15 @@ void MeshTexture::LocalSeamLeveling()
 	}
 }
 
+uint32_t mapNum = 2;      //地图数目 
+uint32_t smallPatchMap = 0;
+uint32_t bigPatchMap = 1;
+
+
 void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLeveling, unsigned nTextureSizeMultiple, unsigned nRectPackingHeuristic, Pixel8U colEmpty)
 {
 	// project patches in the corresponding view and compute texture-coordinates and bounding-box
-
+	
 	typedef Eigen::Matrix<float,2,1> POINT;
 	const int border(2);
 	//三角面片有三个顶点 因此*3
@@ -1829,6 +1850,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		TexturePatch& texturePatch = *pTexturePatch;
 	#endif
 
+	
 	
 		const Image& imageData = images[texturePatch.label];
 		// project vertices and compute bounding-box  包围盒
@@ -1963,18 +1985,24 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		int indexSm=0;
 		int indexBg = 0;
 
-		//classify the patches with different size 
+		//classify the patches with different size
+		//暂且设定两个地图  第一个地图序号为0第二个地图序号为1 
 		//big patch: >500px  ;  small patch <500px
 		FOREACH(i, texturePatches){
 			rects[i] = texturePatches[i].rect;
 			if (texturePatches[i].rect.x<=threshold&&texturePatches[i].rect.x<=threshold)
 			{
 				//small patch
+
+				texturePatches[i].patchLoc.mapNum = smallPatchMap;
+				texturePatches[i].patchLoc.mapIndex = indexSm;
 				smallRects.Allocate();
 				smallRects[indexSm++] = texturePatches[i].rect;
 			}else
 			{
 				//big patch
+				texturePatches[i].patchLoc.mapNum = bigPatchMap;
+				texturePatches[i].patchLoc.mapIndex = indexBg;
 				bigRects.Allocate();
 				bigRects[indexBg++] = texturePatches[i].rect;
 			}
@@ -1985,7 +2013,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		int textureSize(RectsBinPack::ComputeTextureSize(rects, nTextureSizeMultiple));
 		// increase texture size till all patches fit
 		
-		/**
+		
 		while (true) {
 			TD_TIMER_STARTD();
 			bool bPacked(false);
@@ -2022,7 +2050,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//如果大小不够就*2
 			textureSize *= 2;
 		}
-		**/
+		
 
 		//对小纹理集进行排布
 		while (true) {
@@ -2099,15 +2127,26 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//如果大小不够就*2
 			textureSizeBg*= 2;
 		}
+		
 
 		//返回来的一系列rects与之前的顺序是相同的 只不过xy坐标换了 width 和height可能会调转（旋转90°）
 
 		// create texture image
 		const float invNorm(1.f/(float)(textureSize-1));
+		//动态声明地图数组
+		
+		//0号地图是小地图  1号是大纹理地图
+		textureMapArr = new Image8U3[mapNum];
+		textureMapArr[smallPatchMap].create(textureSizeSm,textureSizeSm);
+		textureMapArr[bigPatchMap].create(textureSizeBg,textureSizeBg);
 		textureDiffuse.create(textureSize, textureSize);
+
 		//Scalar 标量
 		//设置空白区域颜色
 		textureDiffuse.setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
+		textureMapArr[smallPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
+		textureMapArr[bigPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
+
 		#ifdef TEXOPT_USE_OPENMP
 		#pragma omp parallel for schedule(dynamic)
 		for (int_t i=0; i<(int_t)texturePatches.GetSize(); ++i) {
@@ -2117,6 +2156,54 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			const uint32_t idxPatch((uint32_t)i);
 			const TexturePatch& texturePatch = texturePatches[idxPatch];
 			const RectsBinPack::Rect& rect = rects[idxPatch];
+			
+
+			if(texturePatch.patchLoc.mapNum==smallPatchMap){
+				//小纹理地图
+				const RectsBinPack::Rect& rectDiff = smallRects[texturePatch.patchLoc.mapIndex];
+				// copy patch image
+				ASSERT((rectDiff.width == texturePatch.rect.width && rectDiff.height == texturePatch.rect.height) ||
+					(rectDiff.height == texturePatch.rect.width && rectDiff.width == texturePatch.rect.height));
+				int x(0), y(1);
+				if (texturePatch.label != NO_ID) {
+					const Image& imageData = images[texturePatch.label];
+
+					//问题：这一句看不明白！！！！！！！！！！
+					cv::Mat patch(imageData.image(texturePatch.rect));
+					if (rect.width != texturePatch.rect.width) {
+						// flip patch and texture-coordinates  翻转面片和纹理坐标  t()是矩阵转置
+						patch = patch.t();
+						x = 1; y = 0;
+					}
+
+					//返回一个子矩阵textureDiffuse(rect) ， 将patch这个矩阵拷贝到 textureDiffuse(rect)这个子矩阵中
+					//textureDiffuse应该就是那个地图   //这是个引用
+					patch.copyTo(textureMapArr[smallPatchMap](rectDiff));
+				}
+			}else if (texturePatch.patchLoc.mapNum==bigPatchMap){
+				//大纹理地图
+				const RectsBinPack::Rect& rectDiff = bigRects[texturePatch.patchLoc.mapIndex];
+				// copy patch image
+				ASSERT((rectDiff.width == texturePatch.rect.width && rectDiff.height == texturePatch.rect.height) ||
+					(rectDiff.height == texturePatch.rect.width && rectDiff.width == texturePatch.rect.height));
+				int x(0), y(1);
+				if (texturePatch.label != NO_ID) {
+					const Image& imageData = images[texturePatch.label];
+
+					//问题：这一句看不明白！！！！！！！！！！
+					cv::Mat patch(imageData.image(texturePatch.rect));
+					if (rect.width != texturePatch.rect.width) {
+						// flip patch and texture-coordinates  翻转面片和纹理坐标  t()是矩阵转置
+						patch = patch.t();
+						x = 1; y = 0;
+					}
+
+					//返回一个子矩阵textureDiffuse(rect) ， 将patch这个矩阵拷贝到 textureDiffuse(rect)这个子矩阵中
+					//textureDiffuse应该就是那个地图   //这是个引用
+					patch.copyTo(textureMapArr[bigPatchMap](rectDiff));
+				}
+			}
+
 			// copy patch image
 			ASSERT((rect.width == texturePatch.rect.width && rect.height == texturePatch.rect.height) ||
 				   (rect.height == texturePatch.rect.width && rect.width == texturePatch.rect.height));
@@ -2151,6 +2238,8 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				}
 			}
 		}
+
+
 	}
 }
 
