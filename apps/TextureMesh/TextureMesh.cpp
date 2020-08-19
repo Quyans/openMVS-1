@@ -37,6 +37,7 @@
 // #include "Types.inl"
 
 using namespace MVS;
+// using namespace std;
 
 
 // D E F I N E S ///////////////////////////////////////////////////
@@ -257,12 +258,13 @@ int main(int argc, LPCTSTR* argv)
 	if (!scene.TextureMesh(OPT::nResolutionLevel, OPT::nMinResolution, OPT::fOutlierThreshold, OPT::fRatioDataSmoothness, OPT::bGlobalSeamLeveling, OPT::bLocalSeamLeveling, OPT::nTextureSizeMultiple, OPT::nRectPackingHeuristic, Pixel8U(OPT::nColEmpty)))
 		return EXIT_FAILURE;
 	VERBOSE("Mesh texturing completed: %u vertices, %u faces (%s)", scene.mesh.vertices.GetSize(), scene.mesh.faces.GetSize(), TD_TIMER_GET_FMT().c_str());
-
+	
 	// 在这里存储的是  .mvs文件
 	scene.Save(baseFileName+_T(".mvs"), (ARCHIVE_TYPE ) OPT::nArchiveType);
 	//在这里存储的是   纹理地图png和ply文件
-	uint32_t  mapSize = getArrayLen(scene.mesh.textureMapArr) ;
-	scene.mesh.Save(baseFileName+OPT::strExportType,mapSize);
+	String str = "长度是" +  std::to_string(scene.mesh.mapNumer);
+	VERBOSE(str);
+	scene.mesh.Save(baseFileName+OPT::strExportType,scene.mesh.mapNumer);
 	
 	
 	#if TD_VERBOSE != TD_VERBOSE_OFF
@@ -270,7 +272,7 @@ int main(int argc, LPCTSTR* argv)
 		scene.ExportCamerasMLP(baseFileName+_T(".mlp"), baseFileName+OPT::strExportType);
 	#endif
 	}	
-	
+
 
 //好像没有调用
 	if (OPT::nOrthoMapResolution) {

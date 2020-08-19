@@ -455,7 +455,8 @@ public:
 	BoolArr& vertexBoundary; // for each vertex, stores if it is at the boundary or not
 	Mesh::TexCoordArr& faceTexcoords; // for each face, the texture-coordinates of the vertices
 	Image8U3& textureDiffuse; // texture containing the diffuse color  包含漫反射颜色的纹理
-	Image8U3* textureMapArr;  //地图文件的数组  指针修改的也是源地址的对象 已经过测试
+	Image8U3*& textureMapArr;  //地图文件的数组  指针修改的也是源地址的对象 已经过测试
+	int & mapNumer;     //记录共有多少个地图
 	// constant the entire time
 	Mesh::VertexArr& vertices;
 	Mesh::FaceArr& faces;
@@ -478,7 +479,8 @@ MeshTexture::MeshTexture(Scene& _scene, unsigned _nResolutionLevel, unsigned _nM
 	faces(_scene.mesh.faces),
 	images(_scene.images),
 	scene(_scene),
-	textureMapArr(_scene.mesh.textureMapArr)
+	textureMapArr(_scene.mesh.textureMapArr),
+	mapNumer(_scene.mesh.mapNumer)
 {
 }
 
@@ -2136,6 +2138,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		//动态声明地图数组
 		
 		//0号地图是小地图  1号是大纹理地图
+		mapNumer = mapNum;
 		textureMapArr = new Image8U3[mapNum];
 		textureMapArr[smallPatchMap].create(textureSizeSm,textureSizeSm);
 		textureMapArr[bigPatchMap].create(textureSizeBg,textureSizeBg);

@@ -1424,9 +1424,10 @@ bool Mesh::LoadOBJ(const String& fileName)
 /*----------------------------------------------------------------*/
 
 // export the mesh to the given file
-bool Mesh::Save(const String& fileName, const cList<String>& comments, bool bBinary, int mapNum) const
+bool Mesh::Save(const String& fileName, int mapNum, const cList<String>& comments, bool bBinary) const
 {
 	TD_TIMER_STARTD();
+	
 	const String ext(Util::getFileExt(fileName).ToLower());
 	bool ret;
 	if (ext == _T(".obj"))
@@ -1492,6 +1493,7 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 		}
 	}
 	if (ply.get_current_element_count() == 0)
+		// delete []textureFileNameList;
 		return false;
 
 
@@ -1523,11 +1525,35 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 		// export the texture 在这里生成纹理地图
 		if (!textureDiffuse.empty())
 			textureDiffuse.Save(textureFileName);
+		
+		// textureMapArr[0].Save(textureFileNameList[0]);
+		// textureMapArr[1].Save(textureFileNameList[1]);
+		String ab = "传过来的长度是长度是"+to_string(mapNum);
+		DEBUG_EXTRA(ab);
+		for (int i = 0; i < mapNum; i++)
+		{	
+			if(!textureMapArr[i].empty()){
+				// String ab = "**abc"+to_string(i);
+				// cout<<"*****************************"<<endl;
+				// String is1Empty = "图片1是否为空"+to_string(textureMapArr[0].empty());
+				// String is2Empty = "图片2是否为空"+to_string(textureMapArr[1].empty());
+				// DEBUG_EXTRA(ab);
+				textureMapArr[i].Save(textureFileNameList[i]);
+
+				// DEBUG_EXTRA(is1Empty);
+				// DEBUG_EXTRA(is2Empty);
+
+			}
+			/* code */
+		}
+		
 	}
 	if (ply.get_current_element_count() == 0)
+		// delete []textureFileNameList;
 		return false;
 
 	// write to file
+	// delete []textureFileNameList;
 	return ply.header_complete();
 }
 // export the mesh as a OBJ file

@@ -96,6 +96,7 @@ public:
 
 	Image8U3 textureDiffuse; // texture containing the diffuse color (optional)
 	Image8U3* textureMapArr;  //地图文件的数组
+	int mapNumer;
 	#ifdef _USE_CUDA
 	static CUDA::KernelRT kernelComputeFaceNormal;
 	#endif
@@ -169,7 +170,7 @@ public:
 
 	// file IO
 	bool Load(const String& fileName);
-	bool Save(const String& fileName, const cList<String>& comments=cList<String>(), bool bBinary=true, int mapNum=1) const;
+	bool Save(const String& fileName,int mapNum=1,const cList<String>& comments=cList<String>(),bool bBinary=true) const;
 	static bool Save(const VertexArr& vertices, const String& fileName, bool bBinary=true);
 
 	static inline uint32_t FindVertex(const Face& f, VIndex v) { for (uint32_t i=0; i<3; ++i) if (f[i] == v) return i; return NO_ID; }
