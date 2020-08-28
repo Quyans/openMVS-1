@@ -2160,14 +2160,15 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			const TexturePatch& texturePatch = texturePatches[idxPatch];
 			const RectsBinPack::Rect& rect = rects[idxPatch];
 			
-
+			//在这里进行对原本的scene.mesh进行赋值
+			int x(0), y(1);
 			if(texturePatch.patchLoc.mapNum==smallPatchMap){
 				//小纹理地图
 				const RectsBinPack::Rect& rectDiff = smallRects[texturePatch.patchLoc.mapIndex];
 				// copy patch image
 				ASSERT((rectDiff.width == texturePatch.rect.width && rectDiff.height == texturePatch.rect.height) ||
 					(rectDiff.height == texturePatch.rect.width && rectDiff.width == texturePatch.rect.height));
-				int x(0), y(1);
+			
 				if (texturePatch.label != NO_ID) {
 					const Image& imageData = images[texturePatch.label];
 
@@ -2189,7 +2190,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				// copy patch image
 				ASSERT((rectDiff.width == texturePatch.rect.width && rectDiff.height == texturePatch.rect.height) ||
 					(rectDiff.height == texturePatch.rect.width && rectDiff.width == texturePatch.rect.height));
-				int x(0), y(1);
+				
 				if (texturePatch.label != NO_ID) {
 					const Image& imageData = images[texturePatch.label];
 
@@ -2207,10 +2208,13 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				}
 			}
 
+			//原本的textureDiffuse
+
 			// copy patch image
 			ASSERT((rect.width == texturePatch.rect.width && rect.height == texturePatch.rect.height) ||
 				   (rect.height == texturePatch.rect.width && rect.width == texturePatch.rect.height));
-			int x(0), y(1);
+			x=0;
+			y=1;
 			if (texturePatch.label != NO_ID) {
 				const Image& imageData = images[texturePatch.label];
 
@@ -2226,6 +2230,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				//textureDiffuse应该就是那个地图   //这是个引用
 				patch.copyTo(textureDiffuse(rect));
 			}
+
 			// compute final texture coordinates
 			const TexCoord offset(rect.tl());
 			FOREACHPTR(pIdxFace, texturePatch.faces) {

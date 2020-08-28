@@ -1427,7 +1427,7 @@ bool Mesh::LoadOBJ(const String& fileName)
 bool Mesh::Save(const String& fileName, int mapNum, const cList<String>& comments, bool bBinary) const
 {
 	TD_TIMER_STARTD();
-	
+
 	const String ext(Util::getFileExt(fileName).ToLower());
 	bool ret;
 	if (ext == _T(".obj"))
@@ -1463,7 +1463,7 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 	for (int i = 0; i < mapNum; i++)
 	{
 		textureFileNameList[i] =  Util::getFileFullName(fileName)+to_string(i)+_T(".png");
-	}
+	}	
 	
 	if (!faceTexcoords.IsEmpty() && !textureDiffuse.empty()) {
 		textureFileName = Util::getFileFullName(fileName)+_T(".png");
@@ -1475,7 +1475,7 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 		// describe what properties go into the vertex elements
 		ply.describe_property(BasicPLY::elem_names[0], 3, BasicPLY::vert_props);
 
-		// export the array of vertices
+		// export the array of vertices  
 		FOREACHPTR(pVert, vertices)
 			ply.put_element(pVert);
 	} else {
@@ -1496,8 +1496,6 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 		// delete []textureFileNameList;
 		return false;
 
-
-
 	if (faceTexcoords.IsEmpty()) {
 		// describe what properties go into the vertex elements
 		ply.describe_property(BasicPLY::elem_names[1], 1, BasicPLY::face_props);
@@ -1515,6 +1513,8 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 		ply.describe_property(BasicPLY::elem_names[1], 2, BasicPLY::face_tex_props);
 
 		// export the array of faces
+		//在这里使用faceTexcoords
+		// 这是一个赋值模式   已经过测试   给Face 和 TexCoord的第一个成员变量分别赋值为  3 6 第二个成员变量 没有赋值
 		BasicPLY::FaceTex face = {{3},{6}};
 		FOREACH(f, faces) {
 			face.face.pFace = faces.Begin()+f;
@@ -1533,27 +1533,22 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 		for (int i = 0; i < mapNum; i++)
 		{	
 			if(!textureMapArr[i].empty()){
-				// String ab = "**abc"+to_string(i);
-				// cout<<"*****************************"<<endl;
-				// String is1Empty = "图片1是否为空"+to_string(textureMapArr[0].empty());
-				// String is2Empty = "图片2是否为空"+to_string(textureMapArr[1].empty());
-				// DEBUG_EXTRA(ab);
+				String ab = "**abc"+to_string(i);
+				cout<<"*****************************"<<endl;
+				String is1Empty = "图片1是否为空"+to_string(textureMapArr[0].empty());
+				String is2Empty = "图片2是否为空"+to_string(textureMapArr[1].empty());
+				DEBUG_EXTRA(ab);
 				textureMapArr[i].Save(textureFileNameList[i]);
-
-				// DEBUG_EXTRA(is1Empty);
-				// DEBUG_EXTRA(is2Empty);
-
 			}
-			/* code */
 		}
-		
 	}
 	if (ply.get_current_element_count() == 0)
 		// delete []textureFileNameList;
 		return false;
 
 	// write to file
-	// delete []textureFileNameList;
+	
+	// delete []textureFileNameList;       //如果加上这句话会产生段错误(核心已转储)
 	return ply.header_complete();
 }
 // export the mesh as a OBJ file

@@ -84,7 +84,7 @@ public:
 
 public:
 	VertexArr vertices;
-	FaceArr faces;
+	FaceArr faces;    //所有的面片
 
 	NormalArr vertexNormals; // for each vertex, the normal to the surface in that point (optional)    对于每个顶点，该点的表面法线
 	VertexVerticesArr vertexVertices; // for each vertex, the list of adjacent vertices (optional)
@@ -93,6 +93,7 @@ public:
 
 	NormalArr faceNormals; // for each face, the normal to it (optional)
 	TexCoordArr faceTexcoords; // for each face, the texture-coordinates corresponding to the contained vertices (optional)
+	TexCoordArr* faceTexArr;  //纹理坐标的数组  每一个
 
 	Image8U3 textureDiffuse; // texture containing the diffuse color (optional)
 	Image8U3* textureMapArr;  //地图文件的数组

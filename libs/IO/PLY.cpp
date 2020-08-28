@@ -162,7 +162,7 @@ bool PLY::write(OSTREAM* f, int nelems, LPCSTR* elem_names, int file_type, size_
 		this->f = f;
 	}
 
-	/* tuck aside the names of the elements */
+	/* tuck aside the names of the elements  保留元素的名称 */ 
 	this->elems.resize(nelems);
 	for (int i = 0; i < nelems; ++i) {
 		PlyElement* elem = new PlyElement;
@@ -383,7 +383,7 @@ void PLY::put_element(const void* elem_ptr)
 
 		/* write out each property of the element */
 		for (size_t j = 0; j < elem->props.size(); ++j) {
-
+			
 			PlyProperty *prop = elem->props[j];
 
 			if (elem->store_prop[j] == OTHER_PROP)
