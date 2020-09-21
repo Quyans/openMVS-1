@@ -57,11 +57,12 @@ public:
 	typedef TPoint3<VIndex> Face;
 	typedef uint32_t FIndex;
 
-	typedef cList<Vertex,const Vertex&,0,8192,VIndex> VertexArr;
+	typedef cList<Vertex,const Vertex&,0,8192,VIndex> VertexArr;    
 	typedef cList<Face,const Face&,0,8192,FIndex> FaceArr;
-
+	typedef cList<int,const int&,0,32,FIndex> FaceMapIndex;    //指定每个face的所在地图的索引
 	typedef cList<VIndex,VIndex,0,8,VIndex> VertexIdxArr;
 	typedef cList<FIndex,FIndex,0,8,FIndex> FaceIdxArr;
+	
 	typedef cList<VertexIdxArr> VertexVerticesArr;
 	typedef cList<FaceIdxArr> VertexFacesArr;
 
@@ -70,7 +71,7 @@ public:
 
 	typedef TPoint2<Type> TexCoord;
 	typedef cList<TexCoord,const TexCoord&,0,8192,FIndex> TexCoordArr;
-
+	typedef  cList<Image8U3,const Image8U3&,0,16777216,FIndex> FaceTexMapArr;  //最大是4096*4096
 	// used to find adjacent face
 	struct FaceCount {
 		int count;
@@ -85,7 +86,7 @@ public:
 public:
 	VertexArr vertices;
 	FaceArr faces;    //所有的面片
-
+	FaceMapIndex faceMapIndex; //对于每个面片记录他所在的地图编号  
 	NormalArr vertexNormals; // for each vertex, the normal to the surface in that point (optional)    对于每个顶点，该点的表面法线
 	VertexVerticesArr vertexVertices; // for each vertex, the list of adjacent vertices (optional)
 	VertexFacesArr vertexFaces; // for each vertex, the list of faces containing it (optional)
@@ -94,9 +95,9 @@ public:
 	NormalArr faceNormals; // for each face, the normal to it (optional)
 	TexCoordArr faceTexcoords; // for each face, the texture-coordinates corresponding to the contained vertices (optional)
 	TexCoordArr* faceTexArr;  //纹理坐标的数组  每一个
-
+	FaceTexMapArr faceTexMapArr;  //纹理地图的数组
 	Image8U3 textureDiffuse; // texture containing the diffuse color (optional)
-	Image8U3* textureMapArr;  //地图文件的数组
+	// Image8U3* textureMapArr;  //地图文件的数组
 	int mapNumer;
 	#ifdef _USE_CUDA
 	static CUDA::KernelRT kernelComputeFaceNormal;
@@ -113,7 +114,11 @@ public:
 	void ReleaseExtra();
 	void EmptyExtra();
 	inline bool IsEmpty() const { return vertices.IsEmpty(); }
-	inline bool HasTexture() const { ASSERT(faceTexcoords.IsEmpty() == textureDiffuse.empty()); return !faceTexcoords.IsEmpty(); }
+	inline bool HasTexture() const { ASSERT(faceTexcoords.IsEmpty() == faceTexMapArr[0].empty()); 
+				String ab = "这里是 hasTexture方法";
+				DEBUG_EXTRA(ab); 
+				return !faceTexcoords.IsEmpty(); }
+	// inline bool HasTexture() const { ASSERT(faceTexcoords.IsEmpty() == textureDiffuse.empty()); return !faceTexcoords.IsEmpty(); }
 
 	Box GetAABB() const;
 	Box GetAABB(const Box& bound) const;

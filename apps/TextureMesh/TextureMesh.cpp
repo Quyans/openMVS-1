@@ -238,6 +238,7 @@ int main(int argc, LPCTSTR* argv)
 	if (OPT::nOrthoMapResolution && !scene.mesh.textureDiffuse.empty()) {
 		// the input mesh is already textured and an orthographic projection was requested
 		//输入的网格已经纹理化，接下来需要进行正交投影
+		std::cout<<"已经纹理化了"<<std::endl;
 		goto ProjectOrtho;
 	}
 
@@ -274,7 +275,7 @@ int main(int argc, LPCTSTR* argv)
 	}	
 
 
-//好像没有调用
+//没有调用
 	if (OPT::nOrthoMapResolution) {
 		// project mesh as an orthographic image  正交图像                         
 		ProjectOrtho:

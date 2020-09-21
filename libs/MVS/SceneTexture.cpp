@@ -455,11 +455,13 @@ public:
 	BoolArr& vertexBoundary; // for each vertex, stores if it is at the boundary or not
 	Mesh::TexCoordArr& faceTexcoords; // for each face, the texture-coordinates of the vertices
 	Image8U3& textureDiffuse; // texture containing the diffuse color  包含漫反射颜色的纹理
-	Image8U3*& textureMapArr;  //地图文件的数组  指针修改的也是源地址的对象 已经过测试
+	// Image8U3*& textureMapArr;  //地图文件的数组  指针修改的也是源地址的对象 已经过测试
+	Mesh::FaceTexMapArr& faceTexMapArr;  //采用列表形式存储地图形式数组
 	int & mapNumer;     //记录共有多少个地图
 	// constant the entire time
 	Mesh::VertexArr& vertices;
 	Mesh::FaceArr& faces;
+	Mesh::FaceMapIndex& faceMapIndex;
 	ImageArr& images;
 
 	Scene& scene; // the mesh vertices and faces
@@ -479,8 +481,10 @@ MeshTexture::MeshTexture(Scene& _scene, unsigned _nResolutionLevel, unsigned _nM
 	faces(_scene.mesh.faces),
 	images(_scene.images),
 	scene(_scene),
-	textureMapArr(_scene.mesh.textureMapArr),
-	mapNumer(_scene.mesh.mapNumer)
+	faceMapIndex(_scene.mesh.faceMapIndex),
+	// textureMapArr(_scene.mesh.textureMapArr),
+	mapNumer(_scene.mesh.mapNumer),
+	faceTexMapArr(_scene.mesh.faceTexMapArr)
 {
 }
 
@@ -1842,6 +1846,8 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 	const int border(2);
 	//三角面片有三个顶点 因此*3
 	faceTexcoords.Resize(faces.GetSize()*3);
+	//在这里对faceMap进行空间分配;
+	faceMapIndex.Reset(faces.GetSize());
 	#ifdef TEXOPT_USE_OPENMP
 	const unsigned numPatches(texturePatches.GetSize()-1);
 	#pragma omp parallel for schedule(dynamic)
@@ -1995,16 +2001,26 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			if (texturePatches[i].rect.x<=threshold&&texturePatches[i].rect.x<=threshold)
 			{
 				//small patch
-
+				for(int j = 0; j<texturePatches[i].faces.GetSize();j++){
+					faceMapIndex[texturePatches[i].faces[j]] = smallPatchMap;
+				}
+				
 				texturePatches[i].patchLoc.mapNum = smallPatchMap;
 				texturePatches[i].patchLoc.mapIndex = indexSm;
 				smallRects.Allocate();
+				// smallRects.push_back(texturePatches[i].rect);
+				// indexSm++;
 				smallRects[indexSm++] = texturePatches[i].rect;
 			}else
 			{
 				//big patch
+				for(int j = 0; j<texturePatches[i].faces.GetSize();j++){
+					faceMapIndex[texturePatches[i].faces[j]] = bigPatchMap;
+				}
 				texturePatches[i].patchLoc.mapNum = bigPatchMap;
 				texturePatches[i].patchLoc.mapIndex = indexBg;
+				// bigRects.push_back(texturePatches[i].rect);
+				// indexBg++;
 				bigRects.Allocate();
 				bigRects[indexBg++] = texturePatches[i].rect;
 			}
@@ -2015,7 +2031,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		int textureSize(RectsBinPack::ComputeTextureSize(rects, nTextureSizeMultiple));
 		// increase texture size till all patches fit
 		
-		
+		/**
 		while (true) {
 			TD_TIMER_STARTD();
 			bool bPacked(false);
@@ -2025,7 +2041,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			const unsigned typeSplit((nRectPackingHeuristic-typeRectsBinPack*100)/10);
 			const unsigned typeHeuristic(nRectPackingHeuristic%10);
 
-
+			
 			switch (typeRectsBinPack) {
 			case 0: {
 				//best fit
@@ -2052,6 +2068,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//如果大小不够就*2
 			textureSize *= 2;
 		}
+		*/
 		
 
 		//对小纹理集进行排布
@@ -2091,6 +2108,8 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//先这样 后期再调整
 			textureSizeSm *= 2;
 		}
+
+	
 		//对大纹理集进行排布
 		while (true) {
 			TD_TIMER_STARTD();
@@ -2100,7 +2119,6 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			const unsigned typeRectsBinPack(nRectPackingHeuristic/100);
 			const unsigned typeSplit((nRectPackingHeuristic-typeRectsBinPack*100)/10);
 			const unsigned typeHeuristic(nRectPackingHeuristic%10);
-
 
 			switch (typeRectsBinPack) {
 			case 0: {
@@ -2129,26 +2147,45 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//如果大小不够就*2
 			textureSizeBg*= 2;
 		}
-		
+	
 
 		//返回来的一系列rects与之前的顺序是相同的 只不过xy坐标换了 width 和height可能会调转（旋转90°）
 
 		// create texture image
 		const float invNorm(1.f/(float)(textureSize-1));
+		const float invNormSm(1.f/(float)(textureSizeSm-1));
+		const float invNormBg(1.f/(float)(textureSizeBg-1));
 		//动态声明地图数组
 		
 		//0号地图是小地图  1号是大纹理地图
 		mapNumer = mapNum;
-		textureMapArr = new Image8U3[mapNum];
-		textureMapArr[smallPatchMap].create(textureSizeSm,textureSizeSm);
-		textureMapArr[bigPatchMap].create(textureSizeBg,textureSizeBg);
+		// textureMapArr = new Image8U3[mapNum];
+		// textureMapArr[smallPatchMap].create(textureSizeSm,textureSizeSm);
+		// textureMapArr[bigPatchMap].create(textureSizeBg,textureSizeBg);
 		textureDiffuse.create(textureSize, textureSize);
+
+		int texSizeArr[] = {textureSizeSm,textureSizeBg};
+		// faceTexMapArr.resize(mapNum);
+		for (int i = 0; i < mapNum; i++)
+		{
+
+			std::cout << "i:    " <<i<< std::endl;
+			Image8U3 texDiffuseTemp;
+			texDiffuseTemp.create(texSizeArr[i],texSizeArr[i]);
+			faceTexMapArr.push_back(texDiffuseTemp);
+		}
+		
+		// faceTexMapArr[smallPatchMap].create(textureSizeSm,textureSizeSm);
+		// faceTexMapArr[bigPatchMap].create(textureSizeBg,textureSizeBg);
 
 		//Scalar 标量
 		//设置空白区域颜色
 		textureDiffuse.setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
-		textureMapArr[smallPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
-		textureMapArr[bigPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
+		for(int idxMap=0; idxMap<faceTexMapArr.GetSize(); idxMap++){
+			faceTexMapArr[idxMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
+		}
+		// faceTexMapArr[smallPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
+		// faceTexMapArr[bigPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
 
 		#ifdef TEXOPT_USE_OPENMP
 		#pragma omp parallel for schedule(dynamic)
@@ -2161,20 +2198,19 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			const RectsBinPack::Rect& rect = rects[idxPatch];
 			
 			//在这里进行对原本的scene.mesh进行赋值
-			int x(0), y(1);
 			if(texturePatch.patchLoc.mapNum==smallPatchMap){
 				//小纹理地图
 				const RectsBinPack::Rect& rectDiff = smallRects[texturePatch.patchLoc.mapIndex];
 				// copy patch image
 				ASSERT((rectDiff.width == texturePatch.rect.width && rectDiff.height == texturePatch.rect.height) ||
 					(rectDiff.height == texturePatch.rect.width && rectDiff.width == texturePatch.rect.height));
-			
+				int x(0), y(1);
 				if (texturePatch.label != NO_ID) {
 					const Image& imageData = images[texturePatch.label];
 
 					//问题：这一句看不明白！！！！！！！！！！
 					cv::Mat patch(imageData.image(texturePatch.rect));
-					if (rect.width != texturePatch.rect.width) {
+					if (rectDiff.width != texturePatch.rect.width) {
 						// flip patch and texture-coordinates  翻转面片和纹理坐标  t()是矩阵转置
 						patch = patch.t();
 						x = 1; y = 0;
@@ -2182,7 +2218,21 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 
 					//返回一个子矩阵textureDiffuse(rect) ， 将patch这个矩阵拷贝到 textureDiffuse(rect)这个子矩阵中
 					//textureDiffuse应该就是那个地图   //这是个引用
-					patch.copyTo(textureMapArr[smallPatchMap](rectDiff));
+					// patch.copyTo(textureMapArr[smallPatchMap](rectDiff));
+					patch.copyTo(faceTexMapArr[smallPatchMap](rectDiff));
+				}
+				const TexCoord offset(rectDiff.tl());
+				FOREACHPTR(pIdxFace, texturePatch.faces) {
+					const FIndex idxFace(*pIdxFace);
+					TexCoord* texcoords = faceTexcoords.Begin()+idxFace*3;
+					for (int v=0; v<3; ++v) {
+						TexCoord& texcoord = texcoords[v];
+						// translate, normalize and flip Y axis
+						texcoord = TexCoord(
+							(texcoord[x]+offset.x)*invNormSm,
+							1.f-(texcoord[y]+offset.y)*invNormSm
+						);
+					}
 				}
 			}else if (texturePatch.patchLoc.mapNum==bigPatchMap){
 				//大纹理地图
@@ -2190,13 +2240,13 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				// copy patch image
 				ASSERT((rectDiff.width == texturePatch.rect.width && rectDiff.height == texturePatch.rect.height) ||
 					(rectDiff.height == texturePatch.rect.width && rectDiff.width == texturePatch.rect.height));
-				
+				int x(0), y(1);
 				if (texturePatch.label != NO_ID) {
 					const Image& imageData = images[texturePatch.label];
 
 					//问题：这一句看不明白！！！！！！！！！！
 					cv::Mat patch(imageData.image(texturePatch.rect));
-					if (rect.width != texturePatch.rect.width) {
+					if (rectDiff.width != texturePatch.rect.width) {
 						// flip patch and texture-coordinates  翻转面片和纹理坐标  t()是矩阵转置
 						patch = patch.t();
 						x = 1; y = 0;
@@ -2204,47 +2254,60 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 
 					//返回一个子矩阵textureDiffuse(rect) ， 将patch这个矩阵拷贝到 textureDiffuse(rect)这个子矩阵中
 					//textureDiffuse应该就是那个地图   //这是个引用
-					patch.copyTo(textureMapArr[bigPatchMap](rectDiff));
+					// patch.copyTo(textureMapArr[bigPatchMap](rectDiff));
+					patch.copyTo(faceTexMapArr[bigPatchMap](rectDiff));
+				}
+				const TexCoord offset(rectDiff.tl());
+				FOREACHPTR(pIdxFace, texturePatch.faces) {
+					const FIndex idxFace(*pIdxFace);
+					TexCoord* texcoords = faceTexcoords.Begin()+idxFace*3;
+					for (int v=0; v<3; ++v) {
+						TexCoord& texcoord = texcoords[v];
+						// translate, normalize and flip Y axis
+						texcoord = TexCoord(
+							(texcoord[x]+offset.x)*invNormBg,
+							1.f-(texcoord[y]+offset.y)*invNormBg
+						);
+					}
 				}
 			}
 
 			//原本的textureDiffuse
 
 			// copy patch image
-			ASSERT((rect.width == texturePatch.rect.width && rect.height == texturePatch.rect.height) ||
-				   (rect.height == texturePatch.rect.width && rect.width == texturePatch.rect.height));
-			x=0;
-			y=1;
-			if (texturePatch.label != NO_ID) {
-				const Image& imageData = images[texturePatch.label];
+			// ASSERT((rect.width == texturePatch.rect.width && rect.height == texturePatch.rect.height) ||
+			// 	   (rect.height == texturePatch.rect.width && rect.width == texturePatch.rect.height));
+			// int x = 0, y = 1;
+			// if (texturePatch.label != NO_ID) {
+			// 	const Image& imageData = images[texturePatch.label];
 
-				//问题：这一句看不明白！！！！！！！！！！
-				cv::Mat patch(imageData.image(texturePatch.rect));
-				if (rect.width != texturePatch.rect.width) {
-					// flip patch and texture-coordinates  翻转面片和纹理坐标  t()是矩阵转置
-					patch = patch.t();
-					x = 1; y = 0;
-				}
+			// 	//问题：这一句看不明白！！！！！！！！！！
+			// 	cv::Mat patch(imageData.image(texturePatch.rect));
+			// 	if (rect.width != texturePatch.rect.width) {
+			// 		// flip patch and texture-coordinates  翻转面片和纹理坐标  t()是矩阵转置
+			// 		patch = patch.t();
+			// 		x = 1; y = 0;
+			// 	}
 
-				//返回一个子矩阵textureDiffuse(rect) ， 将patch这个矩阵拷贝到 textureDiffuse(rect)这个子矩阵中
-				//textureDiffuse应该就是那个地图   //这是个引用
-				patch.copyTo(textureDiffuse(rect));
-			}
+			// 	//返回一个子矩阵textureDiffuse(rect) ， 将patch这个矩阵拷贝到 textureDiffuse(rect)这个子矩阵中
+			// 	//textureDiffuse应该就是那个地图   //这是个引用
+			// 	patch.copyTo(textureDiffuse(rect));
+			// }
 
 			// compute final texture coordinates
-			const TexCoord offset(rect.tl());
-			FOREACHPTR(pIdxFace, texturePatch.faces) {
-				const FIndex idxFace(*pIdxFace);
-				TexCoord* texcoords = faceTexcoords.Begin()+idxFace*3;
-				for (int v=0; v<3; ++v) {
-					TexCoord& texcoord = texcoords[v];
-					// translate, normalize and flip Y axis
-					texcoord = TexCoord(
-						(texcoord[x]+offset.x)*invNorm,
-						1.f-(texcoord[y]+offset.y)*invNorm
-					);
-				}
-			}
+			// const TexCoord offset(rect.tl());
+			// FOREACHPTR(pIdxFace, texturePatch.faces) {
+			// 	const FIndex idxFace(*pIdxFace);
+			// 	TexCoord* texcoords = faceTexcoords.Begin()+idxFace*3;
+			// 	for (int v=0; v<3; ++v) {
+			// 		TexCoord& texcoord = texcoords[v];
+			// 		// translate, normalize and flip Y axis
+			// 		texcoord = TexCoord(
+			// 			(texcoord[x]+offset.x)*invNorm,
+			// 			1.f-(texcoord[y]+offset.y)*invNorm
+			// 		);
+			// 	}
+			// }
 		}
 
 
@@ -2269,7 +2332,7 @@ bool Scene::TextureMesh(unsigned nResolutionLevel, unsigned nMinResolution, floa
 	{
 		TD_TIMER_STARTD();
 		texture.GenerateTexture(bGlobalSeamLeveling, bLocalSeamLeveling, nTextureSizeMultiple, nRectPackingHeuristic, colEmpty);
-		DEBUG_EXTRA("Generating texture atlas and image completed: %u patches, %u image size (%s)", texture.texturePatches.GetSize(), mesh.textureDiffuse.width(), TD_TIMER_GET_FMT().c_str());
+		DEBUG_EXTRA("Generating texture atlas and image completed: %u patches, %u image Map number (%s)", texture.texturePatches.GetSize(), mesh.faceTexMapArr.GetSize(), TD_TIMER_GET_FMT().c_str());
 	}
 	return true;
 } // TextureMesh

@@ -1769,7 +1769,7 @@ void PLY::add_property(const char **words, int /*nwords*/)
 	/* internal types are the same as external by default */
 	prop->internal_type = prop->external_type;
 	prop->count_internal = prop->count_external;
-
+	
 	/* add this property to the list of properties of the current element */
 	PlyElement *elem = this->elems.back();
 	elem->props.push_back(prop);

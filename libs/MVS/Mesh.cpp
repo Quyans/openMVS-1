@@ -28,6 +28,7 @@
 *      that material or in the Appropriate Legal Notices displayed by works
 *      containing it.
 */
+
 #include <CGAL/circulator.h>
 #include "Common.h"
 #include "Mesh.h"
@@ -81,7 +82,18 @@ void Mesh::ReleaseExtra()
 	vertexBoundary.Release();
 	faceNormals.Release();
 	faceTexcoords.Release();
-	textureDiffuse.release();
+	std::cout<<"releaseExtra!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+	for (int i = 0; i <faceTexMapArr.GetSize(); i++)
+	{
+		/* code */
+		faceTexMapArr[i].release();
+	}
+	
+	// FOREACH(idxMap,FaceTexMapArr){
+
+	// }
+
+	// textureDiffuse.release();
 } // ReleaseExtra
 void Mesh::EmptyExtra()
 {
@@ -91,7 +103,13 @@ void Mesh::EmptyExtra()
 	vertexBoundary.Empty();
 	faceNormals.Empty();
 	faceTexcoords.Empty();
-	textureDiffuse.release();
+	std::cout<<"EmptyExtra!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11"<<std::endl;
+	for (int i = 0; i <faceTexMapArr.GetSize(); i++)
+	{
+		/* code */
+		faceTexMapArr[i].release();
+	}
+	// textureDiffuse.release();
 } // EmptyExtra
 /*----------------------------------------------------------------*/
 
@@ -1417,6 +1435,8 @@ bool Mesh::LoadOBJ(const String& fileName)
 
 	// store texture
 	ObjModel::MaterialLib::Material* pMaterial(model.GetMaterial(group.material_name));
+		std::cout<<"Line:1424!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
+
 	if (pMaterial && pMaterial->LoadDiffuseMap())
 		cv::swap(textureDiffuse, pMaterial->diffuse_map);
 	return true;
@@ -1465,11 +1485,15 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 		textureFileNameList[i] =  Util::getFileFullName(fileName)+to_string(i)+_T(".png");
 	}	
 	
-	if (!faceTexcoords.IsEmpty() && !textureDiffuse.empty()) {
-		textureFileName = Util::getFileFullName(fileName)+_T(".png");
-		ply.append_comment((_T("TextureFile ")+Util::getFileNameExt(textureFileName)).c_str());
-	}
+	// if (!faceTexcoords.IsEmpty() && !textureDiffuse.empty()) {
+	// 	// textureFileName = Util::getFileFullName(fileName)+_T(".png");
+	// 	ply.append_comment((_T("TextureFile ")+Util::getFileNameExt(textureFileNameList[0])).c_str());
+	// }
+	ply.append_comment((_T("TextureFile ")+Util::getFileNameExt(textureFileNameList[0])).c_str());
+	ply.append_comment((_T("TextureFile ")+Util::getFileNameExt(textureFileNameList[1])).c_str());
 
+	String ab = (_T("TextureFile ")+Util::getFileNameExt(textureFileNameList[0])).c_str();    //  TextureFile scene_dense_mesh_refine_texture0.png
+	DEBUG_EXTRA(ab);
 	//vertexNormals 法线数组
 	if (vertexNormals.IsEmpty()) {
 		// describe what properties go into the vertex elements
@@ -1522,23 +1546,23 @@ bool Mesh::SavePLY(const String& fileName, const cList<String>& comments, bool b
 			ply.put_element(&face);
 		}
 
-		// export the texture 在这里生成纹理地图
-		if (!textureDiffuse.empty())
-			textureDiffuse.Save(textureFileName);
+		// // export the texture 在这里生成纹理地图
+		// if (!textureDiffuse.empty())
+		// 	textureDiffuse.Save(textureFileName);
 		
 		// textureMapArr[0].Save(textureFileNameList[0]);
 		// textureMapArr[1].Save(textureFileNameList[1]);
-		String ab = "传过来的长度是长度是"+to_string(mapNum);
-		DEBUG_EXTRA(ab);
+		// String ab = "传过来的长度是长度是"+to_string(mapNum);
+		// DEBUG_EXTRA(ab);
 		for (int i = 0; i < mapNum; i++)
 		{	
-			if(!textureMapArr[i].empty()){
-				String ab = "**abc"+to_string(i);
+			if(!faceTexMapArr[i].empty()){
+				// String ab = "**abc"+to_string(i);
 				cout<<"*****************************"<<endl;
-				String is1Empty = "图片1是否为空"+to_string(textureMapArr[0].empty());
-				String is2Empty = "图片2是否为空"+to_string(textureMapArr[1].empty());
-				DEBUG_EXTRA(ab);
-				textureMapArr[i].Save(textureFileNameList[i]);
+				// String is1Empty = "图片1是否为空"+to_string(textureMapArr[0].empty());
+				// String is2Empty = "图片2是否为空"+to_string(textureMapArr[1].empty());
+				// DEBUG_EXTRA(ab);
+				faceTexMapArr[i].Save(textureFileNameList[i]);
 			}
 		}
 	}
@@ -1579,28 +1603,111 @@ bool Mesh::SaveOBJ(const String& fileName) const
 		model.get_texcoords().insert(model.get_texcoords().begin(), faceTexcoords.Begin(), faceTexcoords.End());
 	}
 
-	// store faces
-	ObjModel::Group& group = model.AddGroup(_T("material_0"));
-	group.faces.reserve(faces.GetSize());
-	FOREACH(idxFace, faces) {
-		const Face& face = faces[idxFace];
-		ObjModel::Face f;
-		memset(&f, 0xFF, sizeof(ObjModel::Face));
-		for (int i=0; i<3; ++i) {
-			f.vertices[i] = face[i];
-			if (!faceTexcoords.IsEmpty())
-				f.texcoords[i] = idxFace*3+i;
-			if (!vertexNormals.IsEmpty())
-				f.normals[i] = face[i];
+	int materialSizeArr [2] = {0};
+	int mapType[] = {0,1};
+	int count_smallFace = 0;
+	int count_bigFace = 0;
+	int count_all = 0;
+	FOREACH(idxFace,faceMapIndex){
+		if(faceMapIndex[idxFace]==0){
+			count_smallFace++;
+			materialSizeArr[0] ++; 
 		}
-		group.faces.push_back(f);
+		else if (faceMapIndex[idxFace]==1)
+		{
+			count_bigFace++;
+			materialSizeArr[1] ++; 
+		}
+		count_all++;
 	}
+	std::cout << "count:" <<count_smallFace<< std::endl;
+	std::cout << "face0大小:" <<sizeof(faces[0])<< std::endl;
+	std::cout << "faceSize- countsmall*face0:" <<faces.GetSize()-count_smallFace<< std::endl;
+	std::cout << "faceSize:" <<faces.GetSize()<< std::endl;
+	std::cout << "bigFaceSize:" <<count_bigFace<< std::endl;
+	std::cout << "allSize:" <<count_all<< std::endl;
 
+	// store faces
+	//思路 之前对于每个face存了一个他们所在的地图 这样可以遍历对应的那个数组 如果在1 放在第一个模块 如果在2 放在第二个模块
+
+	for(int idMap = 0; idMap<faceTexMapArr.GetSize(); idMap++){
+
+		String materialName = "material" + to_string(idMap);
+		ObjModel::Group& group = model.AddGroup(_T(materialName));
+		group.faces.reserve(materialSizeArr[idMap]);
+		FOREACH(idxFace,faceMapIndex){
+			if(faceMapIndex[idxFace]==mapType[idMap]){
+				const Face& face = faces[idxFace];
+				ObjModel::Face f;
+				memset(&f, 0xFF, sizeof(ObjModel::Face));
+				for (int i=0; i<3; ++i) {
+					f.vertices[i] = face[i];
+					if (!faceTexcoords.IsEmpty())
+						f.texcoords[i] = idxFace*3+i;
+					if (!vertexNormals.IsEmpty())
+						f.normals[i] = face[i];
+				}
+				group.faces.push_back(f);
+			}
+			continue;
+		}
+		// store texture
+		ObjModel::MaterialLib::Material* pMaterial(model.GetMaterial(group.material_name));
+		ASSERT(pMaterial != NULL);
+		pMaterial->diffuse_map = faceTexMapArr[idMap];
+	}
+	/**
+	ObjModel::Group& group = model.AddGroup(_T("material_0"));
+	group.faces.reserve(count_smallFace);
+	FOREACH(idxFace,faceMapIndex){
+		if(faceMapIndex[idxFace]==0){
+			const Face& face = faces[idxFace];
+			ObjModel::Face f;
+			memset(&f, 0xFF, sizeof(ObjModel::Face));
+			for (int i=0; i<3; ++i) {
+				f.vertices[i] = face[i];
+				if (!faceTexcoords.IsEmpty())
+					f.texcoords[i] = idxFace*3+i;
+				if (!vertexNormals.IsEmpty())
+					f.normals[i] = face[i];
+			}
+			group.faces.push_back(f);
+		}
+		continue;
+	}
 	// store texture
 	ObjModel::MaterialLib::Material* pMaterial(model.GetMaterial(group.material_name));
 	ASSERT(pMaterial != NULL);
-	pMaterial->diffuse_map = textureDiffuse;
+	pMaterial->diffuse_map = faceTexMapArr[0];
 
+
+
+
+	ObjModel::Group& group2 = model.AddGroup(_T("material_1"));
+	// group2.faces.reserve(faces.GetSize()-smallSize);
+	group2.faces.reserve(count_bigFace);
+
+	FOREACH(idxFace,faceMapIndex){
+		if(faceMapIndex[idxFace]==1){
+			const Face& face = faces[idxFace];
+			ObjModel::Face f;
+			memset(&f, 0xFF, sizeof(ObjModel::Face));
+			for (int i=0; i<3; ++i) {
+				f.vertices[i] = face[i];
+				if (!faceTexcoords.IsEmpty())
+					f.texcoords[i] = idxFace*3+i;
+				if (!vertexNormals.IsEmpty())
+					f.normals[i] = face[i];
+			}
+			group2.faces.push_back(f);
+		}
+		continue;
+	}
+	ObjModel::MaterialLib::Material* pMaterial2 (model.GetMaterial(group2.material_name));
+	ASSERT(pMaterial2 != NULL);	
+	pMaterial2->diffuse_map = faceTexMapArr[1];
+
+	*/
 	return model.Save(fileName);
 } // Save
 /*----------------------------------------------------------------*/
@@ -1626,6 +1733,9 @@ bool Mesh::Save(const VertexArr& vertices, const String& fileName, bool bBinary)
 		ply.put_element(pVert);
 	if (ply.get_current_element_count() == 0)
 		return false;
+
+
+	//
 
 	// write to file
 	return ply.header_complete();
@@ -3543,14 +3653,17 @@ void Mesh::SamplePoints(REAL samplingDensity, unsigned mumPointsTheoretic, Point
 			// compute position
 			pointcloud.points.emplace_back(O + static_cast<Vertex::Type>(x)*u + static_cast<Vertex::Type>(y)*v);
 
-			if (HasTexture()) {
+			if (!HasTexture()) {
 				// compute color
 				const FIndex idxTexCoord(idxFace*3);
 				const TexCoord& TO = faceTexcoords[idxTexCoord+0];
 				const TexCoord& TA = faceTexcoords[idxTexCoord+1];
 				const TexCoord& TB = faceTexcoords[idxTexCoord+2];
 				const TexCoord xt(TO + static_cast<TexCoord::Type>(x)*(TA - TO) + static_cast<TexCoord::Type>(y)*(TB - TO));
-				pointcloud.colors.emplace_back(textureDiffuse.sampleSafe(Point2f(xt.x*textureDiffuse.width(), (1.f-xt.y)*textureDiffuse.height())));
+				int index = faceMapIndex[idxFace];
+				String ab = "**index是************************"+to_string(index);
+				DEBUG_EXTRA(ab);
+				pointcloud.colors.emplace_back(faceTexMapArr[index].sampleSafe(Point2f(xt.x*faceTexMapArr[index].width(), (1.f-xt.y)*faceTexMapArr[index].height())));
 			}
 		}
 	}
@@ -3573,6 +3686,8 @@ void Mesh::Project(const Camera& camera, DepthMap& depthMap) const
 }
 void Mesh::Project(const Camera& camera, DepthMap& depthMap, Image8U3& image) const
 {
+
+	std::cout<<"Line:3645!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
 	ASSERT(!faceTexcoords.IsEmpty() && !textureDiffuse.empty());
 	struct RasterMesh : TRasterMesh<RasterMesh> {
 		typedef TRasterMesh<RasterMesh> Base;
