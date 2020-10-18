@@ -1983,16 +1983,21 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 	}
 
 	// create texture
-	{
+	//思路  对于所有的 按照阈值分为大和小纹理两类 存放于各自的list中   若单张地图超过8192*8192  则进行多张地图的分  但是
+	{	
 		int threshold = 500;  //分类的阈值 设置为500px
 		// arrange texture patches to fit the smallest possible texture image
 		RectsBinPack::RectArr rects(texturePatches.GetSize());
 		RectsBinPack::RectArr bigRects;
 		RectsBinPack::RectArr smallRects;
-	
+		
 		int indexSm=0;
 		int indexBg = 0;
 
+		std::vector<int> smList_vec, bgList_vec;
+		smList_vec.push_back(0);
+		bgList_vec.push_back(0);
+		smList_vec[0] = indexSm;
 		//classify the patches with different size
 		//暂且设定两个地图  第一个地图序号为0第二个地图序号为1 
 		//big patch: >500px  ;  small patch <500px
@@ -2007,10 +2012,14 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				
 				texturePatches[i].patchLoc.mapNum = smallPatchMap;
 				texturePatches[i].patchLoc.mapIndex = indexSm;
+	
 				smallRects.Allocate();
-				// smallRects.push_back(texturePatches[i].rect);
-				// indexSm++;
 				smallRects[indexSm++] = texturePatches[i].rect;
+
+				// smallRects[smList_vec[0] ] = texturePatches[i].rect;
+				// // smallRects[smList_vec[0]] = texturePatches[i].rect;
+				// smList_vec[0]++;
+				
 			}else
 			{
 				//big patch

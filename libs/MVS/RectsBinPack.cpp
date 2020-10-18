@@ -99,7 +99,6 @@ bool MaxRectsBinPack::Insert(RectArr& rects, FreeRectChoiceHeuristic method)
 		int bestScore2 = std::numeric_limits<int>::max();
 		IDX bestRectIndex = NO_IDX;
 		Rect bestNode;
-		
 
 		// find the best place to store this rectangle
 		#ifdef RECTPACK_USE_OPENMP
@@ -152,7 +151,7 @@ bool MaxRectsBinPack::Insert(RectArr& rects, FreeRectChoiceHeuristic method)
 			rects.Swap(newRects);
 			return false;
 		}
-
+		
 		// store rectangle
 		PlaceRect(bestNode);
 		//bestNode中存储有矩形左下角的xy坐标 以及 height width 
@@ -517,6 +516,7 @@ void MaxRectsBinPack::PruneFreeList()
 // (if mult > 0, the returned size is a multiple of that value, otherwise is a power of two)
 int MaxRectsBinPack::ComputeTextureSize(const RectArr& rects, int mult)
 {
+	int threshold = 8192;   //单个地图的最大边长
 	int area(0), maxSizePatch(0);
 	FOREACHPTR(pRect, rects) {
 		const Rect& rect = *pRect;
@@ -535,7 +535,13 @@ int MaxRectsBinPack::ComputeTextureSize(const RectArr& rects, int mult)
 		return ((sizeTex+mult-1)/mult)*mult;
 	}
 	// ... as power of two
-	return POWI((int)2, CEIL2INT(LOGN((float)sizeTex) / LOGN(2.f)));
+	int result = POWI((int)2, CEIL2INT(LOGN((float)sizeTex) / LOGN(2.f)));
+	if (result<=threshold)
+	{
+		/* code */
+		return result;
+	}
+	return  threshold;
 }
 /*----------------------------------------------------------------*/
 
