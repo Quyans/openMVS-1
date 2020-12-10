@@ -58,7 +58,6 @@ public:
 	Mesh mesh; // mesh, represented as vertices and triangles, constructed from the input point-cloud
 
 	unsigned nCalibratedImages; // number of valid images
-
 	unsigned nMaxThreads; // maximum number of threads used to distribute the work load
 
 public:
@@ -99,10 +98,10 @@ public:
 	#ifdef _USE_CUDA
 	bool RefineMeshCUDA(unsigned nResolutionLevel, unsigned nMinResolution, unsigned nMaxViews, float fDecimateMesh, unsigned nCloseHoles, unsigned nEnsureEdgeSize, unsigned nMaxFaceArea, unsigned nScales, float fScaleStep, unsigned nAlternatePair, float fRegularityWeight, float fRatioRigidityElasticity, float fGradientStep);
 	#endif
-
+	
 	// Mesh texturing
 	bool TextureMesh(unsigned nResolutionLevel, unsigned nMinResolution, float fOutlierThreshold=0.f, float fRatioDataSmoothness=0.3f, bool bGlobalSeamLeveling=true, bool bLocalSeamLeveling=true, unsigned nTextureSizeMultiple=0, unsigned nRectPackingHeuristic=3, Pixel8U colEmpty=Pixel8U(255,127,39));
-
+	
 	#ifdef _USE_BOOST
 	// implement BOOST serialization
 	template <class Archive>

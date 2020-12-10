@@ -19,6 +19,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/MVS/SceneRefineCUDA.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/MVS/CMakeFiles/MVS.dir/SceneRefineCUDA.cpp.o"
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/MVS/SceneTexture.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/MVS/CMakeFiles/MVS.dir/SceneTexture.cpp.o"
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/MVS/SemiGlobalMatcher.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/MVS/CMakeFiles/MVS.dir/SemiGlobalMatcher.cpp.o"
+  "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/MVS/cotire/MVS_CXX_prefix.hxx" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/MVS/cotire/MVS_CXX_prefix.hxx.gch"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -39,8 +40,8 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "."
   "/usr/local/include/eigen3"
-  "/usr/include/opencv"
   "/usr/local/include"
+  "/usr/include/opencv"
   )
 
 # Targets to which this target links.

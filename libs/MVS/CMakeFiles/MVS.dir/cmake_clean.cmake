@@ -1,4 +1,7 @@
 file(REMOVE_RECURSE
+  "cotire/MVS_CXX_prefix.hxx.gch"
+  "cotire/MVS_CXX_prefix.hxx"
+  "cotire/MVS_CXX_prefix.cxx"
   "CMakeFiles/MVS.dir/Common.cpp.o"
   "CMakeFiles/MVS.dir/Camera.cpp.o"
   "CMakeFiles/MVS.dir/DepthMap.cpp.o"

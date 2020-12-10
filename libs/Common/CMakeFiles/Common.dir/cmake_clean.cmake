@@ -1,4 +1,7 @@
 file(REMOVE_RECURSE
+  "cotire/Common_CXX_prefix.hxx.gch"
+  "cotire/Common_CXX_prefix.hxx"
+  "cotire/Common_CXX_prefix.cxx"
   "CMakeFiles/Common.dir/Common.cpp.o"
   "CMakeFiles/Common.dir/CUDA.cpp.o"
   "CMakeFiles/Common.dir/ConfigTable.cpp.o"
