@@ -1409,11 +1409,12 @@ void MeshTexture::GlobalSeamLeveling()
 		imageAdj.memset(0);
 		// interpolate color adjustments over the whole patch
 		RasterPatchColorData data(imageAdj);
+		
 		FOREACHPTR(pIdxFace, texturePatch.faces) {
 			const FIndex idxFace(*pIdxFace);
 			const Face& face = faces[idxFace];
 			auto ptr = faceTexcoords.Begin()+idxFace*3;
-			std::cout<<" REACH HERE "<< data.tri <<" "<<idxFace*3 << " " << ptr->x <<  " " << ptr->y <<std::endl;
+			std::cout<<" REACH HERE "<< data.tri <<"idFace: "<<idxFace*3 << " " << ptr->x <<  " " << ptr->y <<std::endl;
 			
 			data.tri = faceTexcoords.Begin()+idxFace*3;
 			
