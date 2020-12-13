@@ -1254,6 +1254,8 @@ void MeshTexture::GlobalSeamLeveling()
 		patchIndex.idxSeamVertex = i;
 	}
 
+
+
 	// assign a row index within the solution vector x to each vertex/patch
 	ASSERT(vertices.GetSize() < static_cast<VIndex>(std::numeric_limits<MatIdx>::max()));
 	MatIdx rowsX(0);
@@ -1410,12 +1412,17 @@ void MeshTexture::GlobalSeamLeveling()
 		FOREACHPTR(pIdxFace, texturePatch.faces) {
 			const FIndex idxFace(*pIdxFace);
 			const Face& face = faces[idxFace];
+			auto ptr = faceTexcoords.Begin()+idxFace*3;
+			std::cout<<" REACH HERE "<< data.tri <<" "<<idxFace*3 << " " << ptr->x <<  " " << ptr->y <<std::endl;
+			
 			data.tri = faceTexcoords.Begin()+idxFace*3;
+			
+			// std::cout<<data.tri <<" "<<idxFace*3<<std::endl;
 			for (int v=0; v<3; ++v)
 				data.colors[v] = colorAdjustments.row(vertpatch2rows[face[v]].at(idxPatch));
 			// render triangle and for each pixel interpolate the color adjustment
 			// from the triangle corners using barycentric coordinates
-			ColorMap::RasterizeTriangle(data.tri[0], data.tri[1], data.tri[2], data);
+
 		}
 		// dilate with one pixel width, in order to make sure patch border smooths out a little
 		imageAdj.DilateMean<1>(imageAdj, Color::ZERO);
@@ -1871,6 +1878,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//indices 是index的复数 索引
 			//*pIdxFace  是取出pldxFace这个指针指的那个值 
 			const FIndex idxFace(*pIdxFace);
+			
 			//根据索引取出face
 			const Face& face = faces[idxFace];
 			//faceTexcoords 是纹理坐标的数组
