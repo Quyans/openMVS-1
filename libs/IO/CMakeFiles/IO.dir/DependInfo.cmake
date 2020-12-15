@@ -15,6 +15,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/IO/ImageTIFF.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/IO/CMakeFiles/IO.dir/ImageTIFF.cpp.o"
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/IO/OBJ.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/IO/CMakeFiles/IO.dir/OBJ.cpp.o"
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/IO/PLY.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/IO/CMakeFiles/IO.dir/PLY.cpp.o"
+  "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/IO/cotire/IO_CXX_prefix.hxx" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/IO/cotire/IO_CXX_prefix.hxx.gch"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -38,8 +39,8 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "."
   "/usr/local/include/eigen3"
-  "/usr/include/opencv"
   "/usr/include/x86_64-linux-gnu"
+  "/usr/include/opencv"
   )
 
 # Targets to which this target links.

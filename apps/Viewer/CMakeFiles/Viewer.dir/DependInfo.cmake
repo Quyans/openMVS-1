@@ -10,6 +10,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/apps/Viewer/Scene.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/apps/Viewer/CMakeFiles/Viewer.dir/Scene.cpp.o"
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/apps/Viewer/Viewer.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/apps/Viewer/CMakeFiles/Viewer.dir/Viewer.cpp.o"
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/apps/Viewer/Window.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/apps/Viewer/CMakeFiles/Viewer.dir/Window.cpp.o"
+  "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/apps/Viewer/cotire/Viewer_CXX_prefix.hxx" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/apps/Viewer/cotire/Viewer_CXX_prefix.hxx.gch"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

@@ -230,6 +230,7 @@ int main(int argc, LPCTSTR* argv)
 		// load given mesh
 		scene.mesh.Load(MAKE_PATH_SAFE(OPT::strMeshFileName));
 	}
+	
 	if (scene.mesh.IsEmpty()) {
 		VERBOSE("error: empty initial mesh");
 		return EXIT_FAILURE;

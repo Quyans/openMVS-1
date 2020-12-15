@@ -580,7 +580,7 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 			#endif
 		}
 
-		imageData.UpdateCamera(scene.platforms);
+		imageData.UpdateCamera(scene.platforms);  //相机姿态
 
 		// compute gradient magnitude
 		// 存储到imageGradMag   这个暂时略过先不看  这个方法是将图片转为灰度图片
@@ -605,6 +605,7 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 		#endif
 		
 		(TImage<real>::EMatMap)imageGradMag = (mGrad[0].cwiseAbs2()+mGrad[1].cwiseAbs2()).cwiseSqrt();
+
 		// select faces inside view frustum  椎体
 		CameraFaces cameraFaces;
 		FacesInserter inserter(vertexFaces, cameraFaces);
@@ -639,6 +640,7 @@ bool MeshTexture::ListCameraFaces(FaceDataViewArr& facesDatas, float fOutlierThr
 				if (idxFace == NO_ID)
 					continue;
 				FaceDataArr& faceDatas = facesDatas[idxFace];
+				
 				#if TEXOPT_FACEOUTLIER != TEXOPT_FACEOUTLIER_NA
 				uint32_t& area = areas[idxFace];
 				if (area++ == 0) {
@@ -1252,6 +1254,8 @@ void MeshTexture::GlobalSeamLeveling()
 		patchIndex.idxSeamVertex = i;
 	}
 
+
+
 	// assign a row index within the solution vector x to each vertex/patch
 	ASSERT(vertices.GetSize() < static_cast<VIndex>(std::numeric_limits<MatIdx>::max()));
 	MatIdx rowsX(0);
@@ -1405,15 +1409,23 @@ void MeshTexture::GlobalSeamLeveling()
 		imageAdj.memset(0);
 		// interpolate color adjustments over the whole patch
 		RasterPatchColorData data(imageAdj);
+		
 		FOREACHPTR(pIdxFace, texturePatch.faces) {
 			const FIndex idxFace(*pIdxFace);
 			const Face& face = faces[idxFace];
+			auto ptr = faceTexcoords.Begin()+idxFace*3;
+			std::cout<<" REACH HERE "<< data.tri <<"idFace: "<<idxFace*3 << " " << ptr->x <<  " " << ptr->y <<std::endl;
+
 			data.tri = faceTexcoords.Begin()+idxFace*3;
-			for (int v=0; v<3; ++v)
+					
+			// std::cout<<data.tri <<" "<<idxFace*3<<std::endl;
+			for (int v=0; v<3; ++v){
+				std::cout<<"facev: "<<face[v]<< std::endl;
 				data.colors[v] = colorAdjustments.row(vertpatch2rows[face[v]].at(idxPatch));
+			}
 			// render triangle and for each pixel interpolate the color adjustment
 			// from the triangle corners using barycentric coordinates
-			ColorMap::RasterizeTriangle(data.tri[0], data.tri[1], data.tri[2], data);
+
 		}
 		// dilate with one pixel width, in order to make sure patch border smooths out a little
 		imageAdj.DilateMean<1>(imageAdj, Color::ZERO);
@@ -1869,6 +1881,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//indices 是index的复数 索引
 			//*pIdxFace  是取出pldxFace这个指针指的那个值 
 			const FIndex idxFace(*pIdxFace);
+			
 			//根据索引取出face
 			const Face& face = faces[idxFace];
 			//faceTexcoords 是纹理坐标的数组
@@ -1990,14 +2003,19 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		RectsBinPack::RectArr rects(texturePatches.GetSize());
 		RectsBinPack::RectArr bigRects;
 		RectsBinPack::RectArr smallRects;
+		std::vector<RectsBinPack::RectArr> smallRectVec;
+		std::vector<RectsBinPack::RectArr> bigRectVec;
 		
 		int indexSm=0;
 		int indexBg = 0;
 
-		std::vector<int> smList_vec, bgList_vec;
-		smList_vec.push_back(0);
-		bgList_vec.push_back(0);
-		smList_vec[0] = indexSm;
+		//初始化smallRectVec, bigRectVec
+		{
+			RectsBinPack::RectArr temp;
+			smallRectVec.push_back(temp);
+			bigRectVec.push_back(temp);
+		}
+		
 		//classify the patches with different size
 		//暂且设定两个地图  第一个地图序号为0第二个地图序号为1 
 		//big patch: >500px  ;  small patch <500px
@@ -2012,9 +2030,12 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				
 				texturePatches[i].patchLoc.mapNum = smallPatchMap;
 				texturePatches[i].patchLoc.mapIndex = indexSm;
-	
-				smallRects.Allocate();
-				smallRects[indexSm++] = texturePatches[i].rect;
+
+				// smallRects.Allocate();
+				// smallRects[indexSm++] = texturePatches[i].rect;
+				RectsBinPack::RectArr& temp = smallRectVec[0];
+				temp.Allocate();
+				temp[indexSm++] = texturePatches[i].rect;
 
 				// smallRects[smList_vec[0] ] = texturePatches[i].rect;
 				// // smallRects[smList_vec[0]] = texturePatches[i].rect;
@@ -2030,14 +2051,20 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				texturePatches[i].patchLoc.mapIndex = indexBg;
 				// bigRects.push_back(texturePatches[i].rect);
 				// indexBg++;
-				bigRects.Allocate();
-				bigRects[indexBg++] = texturePatches[i].rect;
+
+				// bigRects.Allocate();
+				// bigRects[indexBg++] = texturePatches[i].rect;
+				RectsBinPack::RectArr& temp = bigRectVec[0];
+				temp.Allocate();
+				temp[indexSm++] = texturePatches[i].rect;
 			}
 		}
+		//单张地图的最大边长
+		int TextureMapThreshold = 8192;
 
-		int textureSizeSm(RectsBinPack::ComputeTextureSize(smallRects,nTextureSizeMultiple));
-		int textureSizeBg(RectsBinPack::ComputeTextureSize(bigRects,nTextureSizeMultiple));
-		int textureSize(RectsBinPack::ComputeTextureSize(rects, nTextureSizeMultiple));
+		int textureSizeSm(RectsBinPack::ComputeTextureSize(smallRectVec[0],TextureMapThreshold,nTextureSizeMultiple));
+		int textureSizeBg(RectsBinPack::ComputeTextureSize(bigRectVec[0],TextureMapThreshold,nTextureSizeMultiple));
+		int textureSize(RectsBinPack::ComputeTextureSize(rects,TextureMapThreshold, nTextureSizeMultiple));
 		// increase texture size till all patches fit
 		
 		/**
@@ -2094,23 +2121,23 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			case 0: {
 				//best fit
 				MaxRectsBinPack pack(textureSizeSm, textureSizeSm);
-				bPacked = pack.Insert(smallRects, (MaxRectsBinPack::FreeRectChoiceHeuristic)typeHeuristic);
+				bPacked = pack.Insert(smallRectVec[0], (MaxRectsBinPack::FreeRectChoiceHeuristic)typeHeuristic);
 				break; }
 			case 1: {
 				//best speed
 				SkylineBinPack pack(textureSizeSm, textureSizeSm, typeSplit!=0);
-				bPacked = pack.Insert(smallRects, (SkylineBinPack::LevelChoiceHeuristic)typeHeuristic);
+				bPacked = pack.Insert(smallRectVec[0], (SkylineBinPack::LevelChoiceHeuristic)typeHeuristic);
 				break; }
 			case 2: {
 			
 				GuillotineBinPack pack(textureSizeSm, textureSizeSm);
-				bPacked = pack.Insert(smallRects, false, (GuillotineBinPack::FreeRectChoiceHeuristic)typeHeuristic, (GuillotineBinPack::GuillotineSplitHeuristic)typeSplit);
+				bPacked = pack.Insert(smallRectVec[0], false, (GuillotineBinPack::FreeRectChoiceHeuristic)typeHeuristic, (GuillotineBinPack::GuillotineSplitHeuristic)typeSplit);
 				break; }
 			default:
 				ABORT("error: unknown RectsBinPack type");
 			}
 
-			DEBUG_ULTIMATE("\tpacking texture completed: %u patches, %u texture-size (%s)", smallRects.GetSize(), textureSizeSm, TD_TIMER_GET_FMT().c_str());
+			DEBUG_ULTIMATE("\tpacking texture completed: %u patches, %u texture-size (%s)", smallRectVec[0].GetSize(), textureSizeSm, TD_TIMER_GET_FMT().c_str());
 			if (bPacked)
 				break;
 			//如果大小不够就*2
@@ -2133,24 +2160,24 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			case 0: {
 				//best fit
 				MaxRectsBinPack pack(textureSizeBg, textureSizeBg);
-				bPacked = pack.Insert(bigRects, (MaxRectsBinPack::FreeRectChoiceHeuristic)typeHeuristic);
+				bPacked = pack.Insert(bigRectVec[0], (MaxRectsBinPack::FreeRectChoiceHeuristic)typeHeuristic);
 				break; }
 			case 1: {
 				//best speed
 				SkylineBinPack pack(textureSizeBg, textureSizeBg, typeSplit!=0);
-				bPacked = pack.Insert(bigRects, (SkylineBinPack::LevelChoiceHeuristic)typeHeuristic);
+				bPacked = pack.Insert(bigRectVec[0], (SkylineBinPack::LevelChoiceHeuristic)typeHeuristic);
 				break; }
 			case 2: {
 				//afjlka
 
 				GuillotineBinPack pack(textureSizeBg, textureSizeBg);
-				bPacked = pack.Insert(bigRects, false, (GuillotineBinPack::FreeRectChoiceHeuristic)typeHeuristic, (GuillotineBinPack::GuillotineSplitHeuristic)typeSplit);
+				bPacked = pack.Insert(bigRectVec[0], false, (GuillotineBinPack::FreeRectChoiceHeuristic)typeHeuristic, (GuillotineBinPack::GuillotineSplitHeuristic)typeSplit);
 				break; }
 			default:
 				ABORT("error: unknown RectsBinPack type");
 			}
 
-			DEBUG_ULTIMATE("\tpacking texture completed: %u patches, %u texture-size (%s)", bigRects.GetSize(), textureSizeBg, TD_TIMER_GET_FMT().c_str());
+			DEBUG_ULTIMATE("\tpacking texture completed: %u patches, %u texture-size (%s)", bigRectVec[0].GetSize(), textureSizeBg, TD_TIMER_GET_FMT().c_str());
 			if (bPacked)
 				break;
 			//如果大小不够就*2
@@ -2183,7 +2210,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			texDiffuseTemp.create(texSizeArr[i],texSizeArr[i]);
 			faceTexMapArr.push_back(texDiffuseTemp);
 		}
-		
+
 		// faceTexMapArr[smallPatchMap].create(textureSizeSm,textureSizeSm);
 		// faceTexMapArr[bigPatchMap].create(textureSizeBg,textureSizeBg);
 
@@ -2195,7 +2222,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		}
 		// faceTexMapArr[smallPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
 		// faceTexMapArr[bigPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
-
+		
 		#ifdef TEXOPT_USE_OPENMP
 		#pragma omp parallel for schedule(dynamic)
 		for (int_t i=0; i<(int_t)texturePatches.GetSize(); ++i) {
@@ -2209,7 +2236,8 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			//在这里进行对原本的scene.mesh进行赋值
 			if(texturePatch.patchLoc.mapNum==smallPatchMap){
 				//小纹理地图
-				const RectsBinPack::Rect& rectDiff = smallRects[texturePatch.patchLoc.mapIndex];
+				RectsBinPack::RectArr& temp = smallRectVec[0];
+				const RectsBinPack::Rect& rectDiff = temp[texturePatch.patchLoc.mapIndex];
 				// copy patch image
 				ASSERT((rectDiff.width == texturePatch.rect.width && rectDiff.height == texturePatch.rect.height) ||
 					(rectDiff.height == texturePatch.rect.width && rectDiff.width == texturePatch.rect.height));
@@ -2217,7 +2245,6 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				if (texturePatch.label != NO_ID) {
 					const Image& imageData = images[texturePatch.label];
 
-					//问题：这一句看不明白！！！！！！！！！！
 					cv::Mat patch(imageData.image(texturePatch.rect));
 					if (rectDiff.width != texturePatch.rect.width) {
 						// flip patch and texture-coordinates  翻转面片和纹理坐标  t()是矩阵转置
@@ -2245,14 +2272,15 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				}
 			}else if (texturePatch.patchLoc.mapNum==bigPatchMap){
 				//大纹理地图
-				const RectsBinPack::Rect& rectDiff = bigRects[texturePatch.patchLoc.mapIndex];
+				RectsBinPack::RectArr& temp = smallRectVec[0];
+				const RectsBinPack::Rect& rectDiff = temp[texturePatch.patchLoc.mapIndex];
 				// copy patch image
 				ASSERT((rectDiff.width == texturePatch.rect.width && rectDiff.height == texturePatch.rect.height) ||
 					(rectDiff.height == texturePatch.rect.width && rectDiff.width == texturePatch.rect.height));
 				int x(0), y(1);
 				if (texturePatch.label != NO_ID) {
 					const Image& imageData = images[texturePatch.label];
-
+				
 					//问题：这一句看不明白！！！！！！！！！！
 					cv::Mat patch(imageData.image(texturePatch.rect));
 					if (rectDiff.width != texturePatch.rect.width) {
@@ -2328,7 +2356,7 @@ bool Scene::TextureMesh(unsigned nResolutionLevel, unsigned nMinResolution, floa
 {
 	//只是构造方法而已
 	MeshTexture texture(*this, nResolutionLevel, nMinResolution);
-
+	
 	// assign the best view to each face
 	{
 		TD_TIMER_STARTD();

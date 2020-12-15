@@ -37,3 +37,7 @@ CMakeSettings.json
 out/
 bin/
 binaries/
+docker/
+bin/
+backup/
+docs/

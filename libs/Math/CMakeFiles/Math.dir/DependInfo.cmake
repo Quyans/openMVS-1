@@ -7,6 +7,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/Math/Common.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/Math/CMakeFiles/Math.dir/Common.cpp.o"
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/Math/IBFS/IBFS.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/Math/CMakeFiles/Math.dir/IBFS/IBFS.cpp.o"
   "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/Math/LMFit/lmmin.cpp" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/Math/CMakeFiles/Math.dir/LMFit/lmmin.cpp.o"
+  "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/Math/cotire/Math_CXX_prefix.hxx" "/home/qys/Documents/git_clone/myOpenMVS/openMVS-1/libs/Math/cotire/Math_CXX_prefix.hxx.gch"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -27,8 +28,8 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "."
   "/usr/local/include/eigen3"
-  "/usr/include/opencv"
   "libs/Math/."
+  "/usr/include/opencv"
   )
 
 # Targets to which this target links.
