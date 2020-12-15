@@ -1415,9 +1415,9 @@ void MeshTexture::GlobalSeamLeveling()
 			const Face& face = faces[idxFace];
 			auto ptr = faceTexcoords.Begin()+idxFace*3;
 			std::cout<<" REACH HERE "<< data.tri <<"idFace: "<<idxFace*3 << " " << ptr->x <<  " " << ptr->y <<std::endl;
-			
+
 			data.tri = faceTexcoords.Begin()+idxFace*3;
-			
+					
 			// std::cout<<data.tri <<" "<<idxFace*3<<std::endl;
 			for (int v=0; v<3; ++v){
 				std::cout<<"facev: "<<face[v]<< std::endl;
@@ -2210,7 +2210,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 			texDiffuseTemp.create(texSizeArr[i],texSizeArr[i]);
 			faceTexMapArr.push_back(texDiffuseTemp);
 		}
-		
+
 		// faceTexMapArr[smallPatchMap].create(textureSizeSm,textureSizeSm);
 		// faceTexMapArr[bigPatchMap].create(textureSizeBg,textureSizeBg);
 
@@ -2222,7 +2222,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 		}
 		// faceTexMapArr[smallPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
 		// faceTexMapArr[bigPatchMap].setTo(cv::Scalar(colEmpty.b, colEmpty.g, colEmpty.r));
-
+		
 		#ifdef TEXOPT_USE_OPENMP
 		#pragma omp parallel for schedule(dynamic)
 		for (int_t i=0; i<(int_t)texturePatches.GetSize(); ++i) {
@@ -2245,7 +2245,6 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				if (texturePatch.label != NO_ID) {
 					const Image& imageData = images[texturePatch.label];
 
-					//问题：这一句看不明白！！！！！！！！！！
 					cv::Mat patch(imageData.image(texturePatch.rect));
 					if (rectDiff.width != texturePatch.rect.width) {
 						// flip patch and texture-coordinates  翻转面片和纹理坐标  t()是矩阵转置
@@ -2281,7 +2280,7 @@ void MeshTexture::GenerateTexture(bool bGlobalSeamLeveling, bool bLocalSeamLevel
 				int x(0), y(1);
 				if (texturePatch.label != NO_ID) {
 					const Image& imageData = images[texturePatch.label];
-
+				
 					//问题：这一句看不明白！！！！！！！！！！
 					cv::Mat patch(imageData.image(texturePatch.rect));
 					if (rectDiff.width != texturePatch.rect.width) {
