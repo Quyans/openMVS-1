@@ -1410,6 +1410,7 @@ void MeshTexture::GlobalSeamLeveling()
 			const Face& face = faces[idxFace];
 			data.tri = faceTexcoords.Begin()+idxFace*3;
 			for (int v=0; v<3; ++v)
+				std::cout<<"reach: "<<v <<std::endl;
 				data.colors[v] = colorAdjustments.row(vertpatch2rows[face[v]].at(idxPatch));
 			// render triangle and for each pixel interpolate the color adjustment
 			// from the triangle corners using barycentric coordinates
