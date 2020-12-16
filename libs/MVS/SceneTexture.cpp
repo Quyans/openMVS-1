@@ -2328,7 +2328,7 @@ bool Scene::TextureMesh(unsigned nResolutionLevel, unsigned nMinResolution, floa
 {
 	//只是构造方法而已
 	MeshTexture texture(*this, nResolutionLevel, nMinResolution);
-
+	std::cout<<"****************start*************"<<std::endl;
 	// assign the best view to each face
 	{
 		TD_TIMER_STARTD();
