@@ -71,7 +71,7 @@ public:
 
 	typedef TPoint2<Type> TexCoord;
 	typedef cList<TexCoord,const TexCoord&,0,8192,FIndex> TexCoordArr;
-	typedef  cList<Image8U3,const Image8U3&,0,16777216,FIndex> FaceTexMapArr;  //最大是4096*4096
+	typedef  cList<Image8U3,const Image8U3&,1,8192,FIndex> FaceTexMapArr;  //最大是4096*4096
 	// used to find adjacent face
 	struct FaceCount {
 		int count;

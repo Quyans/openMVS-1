@@ -1,4 +1,7 @@
 file(REMOVE_RECURSE
+  "cotire/Math_CXX_prefix.hxx.gch"
+  "cotire/Math_CXX_prefix.hxx"
+  "cotire/Math_CXX_prefix.cxx"
   "CMakeFiles/Math.dir/Common.cpp.o"
   "CMakeFiles/Math.dir/IBFS/IBFS.cpp.o"
   "CMakeFiles/Math.dir/LMFit/lmmin.cpp.o"
